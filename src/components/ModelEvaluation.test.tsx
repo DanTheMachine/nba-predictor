@@ -23,7 +23,7 @@ describe('ModelEvaluation', () => {
     fireEvent.change(predictionsInput!, { target: { value: predictionsCsv } })
     fireEvent.change(resultsInput!, { target: { value: resultsCsv } })
 
-    fireEvent.click(screen.getByRole('button', { name: /evaluate model/i }))
+    fireEvent.click(screen.getAllByRole('button', { name: /evaluate model/i })[0]!)
 
     expect(screen.getByText(/evaluated 3 recommended bets across 1 predictions/i)).toBeInTheDocument()
     expect(screen.getAllByText('1-0')).toHaveLength(3)
@@ -31,5 +31,17 @@ describe('ModelEvaluation', () => {
     expect(screen.getByText('BOS ML')).toBeInTheDocument()
     expect(screen.getByText('BOS -4.5')).toBeInTheDocument()
     expect(screen.getByText('OVER')).toBeInTheDocument()
+  })
+
+  it('shows a friendly error for malformed CSV input', () => {
+    render(<ModelEvaluation card={{}} />)
+
+    const textareas = screen.getAllByRole('textbox')
+    fireEvent.change(textareas[0]!, { target: { value: 'bad csv' } })
+    fireEvent.change(textareas[1]!, { target: { value: 'also bad' } })
+
+    fireEvent.click(screen.getAllByRole('button', { name: /evaluate model/i })[0]!)
+
+    expect(screen.getByText(/predictions csv needs a header row and at least one data row/i)).toBeInTheDocument()
   })
 })
