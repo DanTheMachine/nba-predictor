@@ -1,0 +1,416 @@
+# Running The NBA Predictor
+
+This guide explains how to run the NBA predictor locally, from starting the servers to using the main workflow inside the app.
+
+## 1. Project Location
+
+Workspace:
+
+- `C:\projects\game_sims\nba-predictor`
+
+Main app file:
+
+- [NBAModel.tsx](C:\projects\game_sims\nba-predictor\src\NBAModel.tsx)
+
+Local proxy:
+
+- [proxy.ts](C:\projects\game_sims\nba-predictor\proxy.ts)
+
+## 2. What You Need Running
+
+The NBA predictor uses two local processes:
+
+1. the Vite React app
+2. the local proxy server
+
+Why both are needed:
+
+- the React app serves the browser UI
+- the proxy forwards ESPN API requests through `http://localhost:3001`
+- features like schedule loading, odds fetches, team color loading, and results export depend on the proxy
+
+## 3. First-Time Setup
+
+Open a terminal in:
+
+- `C:\projects\game_sims\nba-predictor`
+
+Install dependencies if needed:
+
+```powershell
+npm install
+```
+
+If `node_modules` already exists, you usually do not need to run this again.
+
+## 4. Start The Proxy Server
+
+Open Terminal 1 in:
+
+- `C:\projects\game_sims\nba-predictor`
+
+Run:
+
+```powershell
+npm run proxy
+```
+
+Expected success message:
+
+```text
+Proxy running on http://localhost:3001
+```
+
+Keep this terminal running while you use the app.
+
+## 5. Start The React App
+
+Open Terminal 2 in:
+
+- `C:\projects\game_sims\nba-predictor`
+
+Run:
+
+```powershell
+npm run dev
+```
+
+Vite will start a local dev server, usually at:
+
+- `http://localhost:5173`
+
+Keep this terminal running too.
+
+## 6. Open The Browser App
+
+Open your browser and go to:
+
+- [http://localhost:5173](http://localhost:5173)
+
+If Vite chooses a different port, use the URL shown in the terminal output.
+
+## 7. Recommended Daily Workflow
+
+This is the most common end-to-end pipeline for using the NBA model.
+
+### 7.1 Load team colors
+
+Click:
+
+- `FETCH ESPN`
+
+What it does:
+
+- loads ESPN team colors
+- updates the display layer for team cards and matchup visuals
+
+Typical success state:
+
+- ESPN team colors loaded
+- fetch status turns green
+
+### 7.2 Import live advanced stats
+
+Click:
+
+- `IMPORT STATS`
+
+or, if stats were already loaded:
+
+- `UPDATE STATS`
+
+What it does:
+
+- opens the Basketball Reference import panel
+- lets you paste the Miscellaneous or Advanced Stats export
+- updates the model inputs for all teams when parsed successfully
+
+Typical success message:
+
+- updated team stats from Basketball Reference
+
+Important note:
+
+- this is the main way to refresh model inputs beyond the hardcoded baseline estimates
+
+### 7.3 Load today's games
+
+Click:
+
+- `LOAD GAMES`
+
+What it does:
+
+- pulls today's NBA slate
+- attempts to attach ESPN odds to each game
+- checks which teams are on a back-to-back
+- creates the lines table for the current day
+
+Typical success message:
+
+- `X games loaded | Y with ESPN lines | B2B: ...`
+
+### 7.4 If sportsbook lines need manual updates
+
+Use either:
+
+- inline row editing in the lines table
+- bulk paste import
+
+For bulk paste:
+
+1. click `BULK EDIT LINES`
+2. paste sportsbook lines text
+3. click `APPLY TO TODAY'S GAMES`
+
+What it does:
+
+- parses pasted team blocks
+- matches them to loaded games
+- updates Money Line, spread, and total fields
+
+### 7.5 Adjust back-to-back flags if needed
+
+Each game row has B2B toggles for:
+
+- the home team
+- the away team
+
+Use these if:
+
+- the automatic detection missed a team
+- you want to manually test a fatigue scenario
+
+### 7.6 Run all simulations
+
+Click:
+
+- `RUN ALL SIMS`
+
+What it does:
+
+- runs `predictGame(...)` for every loaded matchup
+- fills the table with:
+  - projected scores
+  - projected total
+  - win probabilities
+  - betting edges
+  - spread and total recommendations
+
+### 7.7 Export predictions
+
+Click:
+
+- `PREDICTIONS CSV`
+
+What it does:
+
+- builds a CSV from all current rows
+- includes model outputs, market terms, edges, Kelly values, and lookup keys
+
+Typical success message:
+
+- exported `nba-predictions-YYYY-MM-DD.csv`
+
+### 7.8 Export next-day results
+
+The next day, click:
+
+- `RESULTS CSV`
+
+What it does:
+
+- fetches yesterday's final NBA scores through the proxy
+- exports a results CSV
+- gives you a file you can paste into the results tracker flow
+
+Typical success message:
+
+- exported yesterday's NBA results
+
+### 7.9 Evaluate model performance
+
+Switch to the:
+
+- `Results` tab
+
+What it does:
+
+- lets you paste or import both predictions and results CSV content
+- matches games by lookup key and team/date data
+- grades Money Line, spread, and over/under outcomes
+- shows win-loss and ROI summaries by market
+
+Recommended workflow:
+
+1. export `PREDICTIONS CSV`
+2. export `RESULTS CSV` the next day
+3. switch to the `Results` tab
+4. click `PASTE PREDICTIONS CSV`
+5. click `PASTE RESULTS CSV`
+6. import both
+
+What to look at:
+
+- `MONEYLINE`
+- `SPREAD ATS`
+- `OVER / UNDER`
+- graded game count
+- ROI by market
+
+## 8. Single-Game Workflow
+
+The app also supports one-off matchup analysis.
+
+Typical flow:
+
+1. choose home team
+2. choose away team
+3. set game type
+4. set back-to-back flags if needed
+5. import BBRef stats if desired
+6. fetch odds or enter them manually
+7. run the simulation
+
+This is useful for:
+
+- testing one game quickly
+- checking baseline versus live imported stats
+- comparing ESPN odds against manual lines
+
+## 9. Full Workflow Pipeline Summary
+
+Use this sequence for most days:
+
+1. start `npm run proxy`
+2. start `npm run dev`
+3. open `http://localhost:5173`
+4. click `FETCH ESPN`
+5. click `IMPORT STATS` and paste Basketball Reference data if desired
+6. click `LOAD GAMES`
+7. paste or edit lines if needed
+8. adjust B2B flags if needed
+9. click `RUN ALL SIMS`
+10. click `PREDICTIONS CSV`
+11. next day, click `RESULTS CSV`
+12. switch to the `Results` tab
+13. import both CSVs to grade performance
+
+## 10. Common Problems
+
+### Proxy not running
+
+Symptoms:
+
+- schedule fails
+- odds fail
+- results export fails
+- ESPN color fetch fails
+
+Fix:
+
+```powershell
+npm run proxy
+```
+
+### App not loading
+
+Symptoms:
+
+- browser page does not open
+- `localhost:5173` does not respond
+
+Fix:
+
+```powershell
+npm run dev
+```
+
+### BBRef import does not update teams
+
+Symptoms:
+
+- import fails
+- zero teams updated
+- stats stay on estimates
+
+Fixes:
+
+- paste the full table including the header row
+- use the Basketball Reference table that includes the expected advanced stat columns
+- confirm team names match the standard Basketball Reference naming
+
+### Bulk paste parser does not match lines
+
+Symptoms:
+
+- bulk paste says it parsed too few teams
+- lines table does not update
+
+Fixes:
+
+- load today's games first
+- use the standard team-block paste format
+- confirm the pasted teams match the same slate already loaded in the app
+
+### Results grading is incomplete
+
+Symptoms:
+
+- some games stay ungraded
+- only part of the sheet evaluates correctly
+
+Fixes:
+
+- make sure you exported predictions from the current app format
+- make sure results and predictions refer to the same game date
+- confirm both CSVs were imported into the `Results` tab
+
+## 11. Running Checks
+
+The repo currently has build and static checks available from the command line.
+
+### 11.1 Production build
+
+Run:
+
+```powershell
+npm run build
+```
+
+What this does:
+
+- builds the Vite production bundle
+- catches JSX and compile-time issues
+
+### 11.2 Lint
+
+Run:
+
+```powershell
+npm run lint
+```
+
+What this covers:
+
+- ESLint checks across the TypeScript and React files
+
+### 11.3 Type checking
+
+Run:
+
+```powershell
+npm run typecheck
+```
+
+What this covers:
+
+- frontend TypeScript checks
+- Node and proxy TypeScript checks
+
+## 12. Notes For Local Runs
+
+- Keep both terminals open while using the app.
+- The proxy must remain running for ESPN-backed features.
+- The model can still run without BBRef imports, but then it uses baseline estimates instead of refreshed advanced stats.
+- Results grading works best when predictions and results are exported in the same workflow cycle.
