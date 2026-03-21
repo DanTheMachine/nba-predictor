@@ -8,6 +8,7 @@ This document explains how the current NBA model in [NBAModel.tsx](C:\projects\g
 - spread cover recommendations
 - over/under recommendations
 - betting recommendations versus sportsbook terms
+- post-bet evaluation-ready CSV exports
 
 The core engine currently lives in:
 
@@ -405,7 +406,11 @@ It includes:
 - projected points
 - projected total
 - model Money Line
+- explicit Money Line recommendation
 - sportsbook Money Line
+- sportsbook over and under prices
+- sportsbook spread line
+- sportsbook spread prices for both sides
 - Money Line edge
 - Kelly percentages
 - spread recommendation
@@ -419,7 +424,71 @@ It includes:
 
 If a simulation has not already been run for a row, export will generate one on demand using the same `predictGame(...)` engine.
 
-## 13. Worked Example
+### 12.1 Recent export additions for grading
+
+Recent workflow changes expanded the export so post-bet evaluation can be done without assuming default prices.
+
+Important exported fields now include:
+
+- `ML Rec`
+- `Vegas H ML`
+- `Vegas A ML`
+- `Vegas O/U`
+- `Over Odds`
+- `Under Odds`
+- `Vegas Spread`
+- `Spread Home Odds`
+- `Spread Away Odds`
+- `LookupKey`
+
+These fields are used by the evaluator to grade:
+
+- whether a Money Line recommendation actually existed
+- which side was recommended
+- which price was available for the recommended spread or total bet
+- per-bet ROI in unit terms
+
+### 12.2 Money Line grading change
+
+Older grading logic could infer a Money Line side from whichever team had win probability above `50%`.
+
+The current workflow is more explicit:
+
+- the predictor export writes `ML Rec`
+- the evaluation flow grades Money Line only when that field contains a real recommendation
+- `PASS` means no Money Line wager should be counted
+
+This is important because:
+
+- a predicted winner is not always a bet
+- a bet exists only when model edge versus sportsbook price crosses the recommendation threshold
+
+## 13. Post-Bet Evaluation Workflow
+
+The app now supports a dedicated evaluation pass using:
+
+- exported Predictions CSV
+- exported Results CSV
+
+The evaluation logic currently lives in:
+
+- [modelEvaluation.ts](C:\projects\game_sims\nba-predictor\src\lib\modelEvaluation.ts)
+- [ModelEvaluation.tsx](C:\projects\game_sims\nba-predictor\src\components\ModelEvaluation.tsx)
+
+The evaluator:
+
+- parses both CSV files
+- matches games by `LookupKey`
+- grades Money Line, spread, and total recommendations
+- tracks `WIN`, `LOSS`, `PUSH`, or `PENDING`
+- computes unit-based ROI from exported market odds
+
+Compatibility notes:
+
+- newer prediction exports carry the explicit structured odds fields
+- older exports can still be evaluated with fallback assumptions for spread and total pricing
+
+## 14. Worked Example
 
 This example uses rounded values to explain the NBA flow. It is illustrative, not a promise of a live output.
 
@@ -513,7 +582,7 @@ That projected margin is converted through the logistic transform into a home wi
 
 Exact output depends on the specific team inputs and live overrides.
 
-## 14. Calibration Notes
+## 15. Calibration Notes
 
 The current NBA model is still a hand-built rating model, not a trained closing-line model.
 

@@ -233,6 +233,7 @@ Typical success message:
 Switch to the:
 
 - `Results` tab
+- `MODEL EVAL` tab
 
 What it does:
 
@@ -240,6 +241,11 @@ What it does:
 - matches games by lookup key and team/date data
 - grades Money Line, spread, and over/under outcomes
 - shows win-loss and ROI summaries by market
+
+What is different between the two tabs:
+
+- `Results` is the built-in tracker for imported prediction and result logs inside the app workflow
+- `MODEL EVAL` is the dedicated post-bet evaluation screen for pasting full Predictions CSV and Results CSV files and reviewing per-bet grading and ROI
 
 Recommended workflow:
 
@@ -249,6 +255,15 @@ Recommended workflow:
 4. click `PASTE PREDICTIONS CSV`
 5. click `PASTE RESULTS CSV`
 6. import both
+
+Alternative workflow:
+
+1. export `PREDICTIONS CSV`
+2. export `RESULTS CSV` the next day
+3. switch to the `MODEL EVAL` tab
+4. paste the full predictions CSV
+5. paste the full results CSV
+6. click `EVALUATE MODEL`
 
 What to look at:
 
@@ -261,6 +276,12 @@ What to look at:
 ## 8. Single-Game Workflow
 
 The app also supports one-off matchup analysis.
+
+The single-game tools now live behind a closed-by-default panel below the `TODAY'S GAMES & EXPORT` section.
+
+Open them with:
+
+- `OPEN SINGLE GAME`
 
 Typical flow:
 
@@ -408,7 +429,54 @@ What this covers:
 - frontend TypeScript checks
 - Node and proxy TypeScript checks
 
-## 12. Notes For Local Runs
+## 12. Testing
+
+The repo now includes both component-level and browser-level tests.
+
+### 12.1 Vitest unit and component tests
+
+Run:
+
+```powershell
+npm run test
+```
+
+Watch mode:
+
+```powershell
+npm run test:watch
+```
+
+Vitest UI:
+
+```powershell
+npm run test:ui
+```
+
+What this covers:
+
+- component rendering and interaction tests
+- CSV evaluation logic through UI-facing test cases
+
+### 12.2 Playwright UI tests
+
+Run:
+
+```powershell
+npm run test:e2e
+```
+
+What this covers:
+
+- end-to-end browser smoke coverage
+- tab navigation and evaluator workflow checks
+
+First-time note:
+
+- Playwright may require browser installation before the first run
+- if needed, run `npx playwright install chromium`
+
+## 13. Notes For Local Runs
 
 - Keep both terminals open while using the app.
 - The proxy must remain running for ESPN-backed features.
