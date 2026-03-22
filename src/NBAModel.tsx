@@ -441,8 +441,8 @@ export default function NBAModel() {
       const mlRec = !ba || ba.mlValueSide === "none"
         ? "PASS"
         : ba.mlValueSide === "home"
-          ? `${r.game.homeAbbr} ML`
-          : `${r.game.awayAbbr} ML`;
+          ? `HOME - ${r.game.homeAbbr}`
+          : `AWAY - ${r.game.awayAbbr}`;
       // LookupKey: YYYYMMDD + HomeAbbr + AwayAbbr  (matches Results CSV)
       const dateYMD = today.replace(/-/g,"");
       const lookupKey = `${dateYMD}${r.game.homeAbbr}${r.game.awayAbbr}`;
@@ -636,8 +636,8 @@ export default function NBAModel() {
     const fallbackMlSide = p.hWinPct > 50 ? "home" : "away";
     const mlRecSide =
       mlRecLower === "pass" || mlRecLower === "â€”" || mlRecLower === "-" ? null
-      : mlRecLower.includes(`${p.home.toLowerCase()} ml`) || mlRecLower === "home ml" ? "home"
-      : mlRecLower.includes(`${p.away.toLowerCase()} ml`) || mlRecLower === "away ml" ? "away"
+      : mlRecLower.includes(`${p.home.toLowerCase()} ml`) || mlRecLower.includes(`ml - ${p.home.toLowerCase()}`) || mlRecLower === "home ml" ? "home"
+      : mlRecLower.includes(`${p.away.toLowerCase()} ml`) || mlRecLower.includes(`ml - ${p.away.toLowerCase()}`) || mlRecLower === "away ml" ? "away"
       : !mlRecRaw && p.mlEdge && p.mlEdge !== "â€”" ? fallbackMlSide
       : !mlRecRaw && !p.mlEdge && p.hWinPct !== null ? fallbackMlSide
       : null;
@@ -672,9 +672,9 @@ export default function NBAModel() {
       ouROI  = ouWin ? (100/110) : -1;
     }
     const normalizedMlRec = mlRecSide === "home"
-      ? `${p.home} ML`
+      ? `HOME - ${p.home}`
       : mlRecSide === "away"
-        ? `${p.away} ML`
+        ? `AWAY - ${p.away}`
         : "PASS";
     return { ...p, mlRec: normalizedMlRec, res, graded:true, actualTotal, actualDiff, mlWin, mlROI, sprWin, sprROI, ouWin, ouROI };
   });

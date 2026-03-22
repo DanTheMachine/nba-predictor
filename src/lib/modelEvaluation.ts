@@ -255,8 +255,8 @@ export function evaluatePredictions(predictions: ParsedPredictionRow[], results:
     const fallbackMlRec =
       prediction.mlEdge != null && prediction.homeWinPct != null && prediction.awayWinPct != null
         ? prediction.homeWinPct >= prediction.awayWinPct
-          ? `${prediction.home} ML`
-          : `${prediction.away} ML`
+          ? `HOME - ${prediction.home}`
+          : `AWAY - ${prediction.away}`
         : ''
     const mlRec = (prediction.mlRec || fallbackMlRec).trim().toUpperCase()
     if (mlRec && mlRec !== 'PASS' && mlRec !== '-' && mlRec !== '—') {

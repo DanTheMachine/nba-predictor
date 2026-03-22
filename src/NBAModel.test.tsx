@@ -162,7 +162,7 @@ describe('NBAModel export', () => {
     expect(headerRow).toContain('"Spread Away Odds"')
     expect(headerRow).toContain('"LookupKey"')
 
-    expect(dataRow).toContain('"BOS ML"')
+    expect(dataRow).toContain('"HOME - BOS"')
     expect(dataRow).toContain('"-112"')
     expect(dataRow).toContain('"-108"')
     expect(dataRow).toContain('"-4.5"')

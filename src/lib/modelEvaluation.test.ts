@@ -35,7 +35,7 @@ describe('modelEvaluation', () => {
 
   it('marks bets as pending when no result row is available yet', () => {
     const predictions = parsePredictionsCsv(`"Date","Home","Away","ML Rec","Vegas H ML","LookupKey"
-"2026-03-20","BOS Celtics","LAL Lakers","BOS ML","-150","20260320BOSLAL"`)
+"2026-03-20","BOS Celtics","LAL Lakers","HOME - BOS","-150","20260320BOSLAL"`)
 
     const report = evaluatePredictions(predictions, [])
 
@@ -46,7 +46,7 @@ describe('modelEvaluation', () => {
 
   it('builds lookup keys from date and team abbreviations when the predictions CSV does not include one', () => {
     const predictions = parsePredictionsCsv(`"Date","Home","Away","ML Rec","ML Edge%","Vegas H ML"
-"2026-03-20","BOS Celtics","LAL Lakers","BOS ML","+3.4%","-145"`)
+"2026-03-20","BOS Celtics","LAL Lakers","HOME - BOS","+3.4%","-145"`)
 
     expect(predictions).toHaveLength(1)
     expect(predictions[0]?.lookupKey).toBe('20260320BOSLAL')
@@ -56,9 +56,9 @@ describe('modelEvaluation', () => {
 
   it('treats placeholder odds markers as missing values while preserving explicit recommendations', () => {
     const predictions = parsePredictionsCsv(`"Date","Home","Away","ML Rec","Vegas H ML","Vegas A ML","Vegas Spread","Vegas O/U"
-"2026-03-20","BOS Celtics","LAL Lakers","BOS ML","â€”","---","-","â€”"`)
+"2026-03-20","BOS Celtics","LAL Lakers","HOME - BOS","â€”","---","-","â€”"`)
 
-    expect(predictions[0]?.mlRec).toBe('BOS ML')
+    expect(predictions[0]?.mlRec).toBe('HOME - BOS')
     expect(predictions[0]?.vegasHomeML).toBeNull()
     expect(predictions[0]?.vegasAwayML).toBeNull()
     expect(predictions[0]?.vegasSpread).toBeNull()

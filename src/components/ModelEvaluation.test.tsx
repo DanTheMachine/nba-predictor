@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import ModelEvaluation from './ModelEvaluation'
 
 const predictionsCsv = `"Date","Home","Away","ML Rec","Vegas H ML","Vegas A ML","Vegas Spread","Spread Home Odds","Spread Away Odds","Vegas O/U","Over Odds","Under Odds","Spread Rec","O/U Rec","LookupKey"
-"2026-03-20","BOS Celtics","LAL Lakers","BOS ML","-150","+130","-4.5","-110","-110","224.5","-105","-115","BOS -4.5","OVER","20260320BOSLAL"`
+"2026-03-20","BOS Celtics","LAL Lakers","HOME - BOS","-150","+130","-4.5","-110","-110","224.5","-105","-115","BOS -4.5","OVER","20260320BOSLAL"`
 
 const resultsCsv = `"Date","Home","Away","Home Score","Away Score","LookupKey"
 "2026-03-20","BOS","LAL","118","110","20260320BOSLAL"`
@@ -28,7 +28,7 @@ describe('ModelEvaluation', () => {
     expect(screen.getByText(/evaluated 3 recommended bets across 1 predictions/i)).toBeInTheDocument()
     expect(screen.getAllByText('1-0')).toHaveLength(3)
     expect(screen.getByText(/BET LOG \| 3 bets \| 3 settled/i)).toBeInTheDocument()
-    expect(screen.getByText('BOS ML')).toBeInTheDocument()
+    expect(screen.getByText('HOME - BOS')).toBeInTheDocument()
     expect(screen.getByText('BOS -4.5')).toBeInTheDocument()
     expect(screen.getByText('OVER')).toBeInTheDocument()
   })
