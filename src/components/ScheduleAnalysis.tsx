@@ -1,28 +1,21 @@
 import type { CSSProperties, Dispatch, SetStateAction } from "react";
 import { Fragment } from "react";
+import type { UseResultsTrackerReturn } from "../hooks/useResultsTracker";
 import type {
-  BettingAnalysis,
   EditableOddsFields,
   LiveStatsMap,
-  OddsInput,
-  PredictionResult,
   ScheduleRow,
   TeamAbbr,
   TeamStats,
 } from "../lib/nbaTypes";
+import type { analyzeBetting as AnalyzeBettingFn, mlAmerican as MlAmericanFn } from "../lib/betting";
+import type { predictGame as PredictGameFn } from "../lib/nbaModel";
 
 type ScheduleAnalysisProps = {
   card: CSSProperties
-  analyzeBetting: (result: PredictionResult, odds: OddsInput) => BettingAnalysis
-  mlAmerican: (probability: number) => string
-  predictGame: (input: {
-    homeTeam: TeamAbbr
-    awayTeam: TeamAbbr
-    gameType: "Regular Season"
-    homeB2B: boolean
-    awayB2B: boolean
-    liveStats: LiveStatsMap
-  }) => PredictionResult
+  analyzeBetting: typeof AnalyzeBettingFn
+  mlAmerican: typeof MlAmericanFn
+  predictGame: typeof PredictGameFn
   liveStats: LiveStatsMap
   TEAMS: Record<TeamAbbr, TeamStats>
   showBulkImport: boolean
@@ -41,14 +34,16 @@ type ScheduleAnalysisProps = {
   handleLoadSchedule: () => void | Promise<void>
   handleRunAllSims: () => void
   handleExport: () => void
-  handleFetchResults: (forPredictor?: boolean) => void | Promise<void>
+  handleFetchResults: UseResultsTrackerReturn["handleFetchResults"]
   fetchingResults: boolean
   editingIdx: number | null
   setEditingIdx: Dispatch<SetStateAction<number | null>>
   editFields: Partial<EditableOddsFields>
   setEditFields: Dispatch<SetStateAction<Partial<EditableOddsFields>>>
-  startEdit: (idx: number) => void
-  saveEdit: (idx: number) => void
+  // eslint-disable-next-line no-unused-vars
+  startEdit: (...ARGS: [number]) => void
+  // eslint-disable-next-line no-unused-vars
+  saveEdit: (...ARGS: [number]) => void
 }
 
 type B2BField = "homeB2B" | "awayB2B"
@@ -63,10 +58,10 @@ type BestBet = {
   kelly: number
 }
 
-const B2B_FIELDS: Array<{ field: B2BField; getAbbr: (row: ScheduleRow) => TeamAbbr }> = [
+const B2B_FIELDS = [
   { field: "homeB2B", getAbbr: (row) => row.game.homeAbbr },
   { field: "awayB2B", getAbbr: (row) => row.game.awayAbbr },
-]
+] as const
 
 const EDIT_FIELDS: Array<{ label: string; field: EditFieldKey }> = [
   { label: "H ML", field: "homeMoneyline" },

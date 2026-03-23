@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 
 import CourtBar from './CourtBar'
 import { americanToImplied } from '../lib/betting'
+import type { analyzeBetting as AnalyzeBettingFn, mlAmerican as MlAmericanFn } from '../lib/betting'
 import type { BettingAnalysis, OddsInput, PredictionResult, TeamStats } from '../lib/nbaTypes'
 
 type SingleGameResultsProps = {
@@ -16,8 +17,8 @@ type SingleGameResultsProps = {
   aTeam: TeamStats
   hasLive: boolean
   statsUpdated: string
-  analyzeBetting: (result: PredictionResult, odds: OddsInput) => BettingAnalysis
-  mlAmerican: (probability: number) => string
+  analyzeBetting: typeof AnalyzeBettingFn
+  mlAmerican: typeof MlAmericanFn
 }
 
 type MoneylineCard = {

@@ -15,7 +15,7 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-type UseResultsTrackerReturn = {
+export type UseResultsTrackerReturn = {
   resultsPaste: string;
   setResultsPaste: Dispatch<SetStateAction<string>>;
   resultsLog: ResultLogEntry[];
@@ -32,9 +32,10 @@ type UseResultsTrackerReturn = {
   setPredLog: Dispatch<SetStateAction<PredictionLogEntry[]>>;
   showPredPaste: boolean;
   setShowPredPaste: Dispatch<SetStateAction<boolean>>;
-  handleFetchResults: (forPredictor?: boolean) => Promise<void>;
-  handleImportResults: () => void;
-  handleImportPredictions: () => void;
+  // eslint-disable-next-line no-unused-vars
+  handleFetchResults: (...ARGS: [boolean?]) => Promise<void>;
+  handleImportResults(): void;
+  handleImportPredictions(): void;
   gradedRows: GradedPredictionRow[];
   stats: TrackerStats;
 };

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 
+import type { UseResultsTrackerReturn } from '../hooks/useResultsTracker'
 import type { GradedPredictionRow, PredictionLogEntry, ResultLogEntry, TrackerStats } from '../lib/nbaTypes'
 
 type ResultsTrackerProps = {
@@ -7,7 +8,7 @@ type ResultsTrackerProps = {
   resultsError: string
   gradedRows: GradedPredictionRow[]
   stats: TrackerStats
-  handleFetchResults: (forPredictor?: boolean) => void | Promise<void>
+  handleFetchResults: UseResultsTrackerReturn['handleFetchResults']
   fetchingResults: boolean
   showResultsPaste: boolean
   setShowResultsPaste: Dispatch<SetStateAction<boolean>>

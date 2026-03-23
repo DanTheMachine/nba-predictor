@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { analyzeBetting, mlAmerican } from "./lib/betting";
 import { parseBulkOdds } from "./lib/bulkOddsParser";
-import { DIVISIONS, GAME_TYPES, TEAMS, normalizeAbbr, parseBBRefCSV, predictGame } from "./lib/nbaModel";
+import { DIVISIONS, GAME_TYPES, TEAMS, parseBBRefCSV, predictGame } from "./lib/nbaModel";
 import { downloadCSV, fetchB2BTeams, fetchNBAColors, fetchTodaySchedule, parseOddsFromEvent } from "./lib/espn";
 import { usePredictorState } from "./hooks/usePredictorState";
 import { useResultsTracker } from "./hooks/useResultsTracker";
@@ -56,7 +56,6 @@ export default function NBAModel() {
     awayB2B,
     setAwayB2B,
     result,
-    setResult,
     running,
     simCount,
     odds,
