@@ -1,5 +1,83 @@
-// @ts-nocheck
+import type { CSSProperties, Dispatch, SetStateAction } from "react";
 import { Fragment } from "react";
+import type {
+  BettingAnalysis,
+  EditableOddsFields,
+  LiveStatsMap,
+  OddsInput,
+  PredictionResult,
+  ScheduleRow,
+  TeamAbbr,
+  TeamStats,
+} from "../lib/nbaTypes";
+
+type ScheduleAnalysisProps = {
+  card: CSSProperties
+  analyzeBetting: (result: PredictionResult, odds: OddsInput) => BettingAnalysis
+  mlAmerican: (probability: number) => string
+  predictGame: (input: {
+    homeTeam: TeamAbbr
+    awayTeam: TeamAbbr
+    gameType: "Regular Season"
+    homeB2B: boolean
+    awayB2B: boolean
+    liveStats: LiveStatsMap
+  }) => PredictionResult
+  liveStats: LiveStatsMap
+  TEAMS: Record<TeamAbbr, TeamStats>
+  showBulkImport: boolean
+  setShowBulkImport: Dispatch<SetStateAction<boolean>>
+  bulkError: string
+  bulkStatus: string
+  bulkPaste: string
+  setBulkPaste: Dispatch<SetStateAction<string>>
+  handleBulkImport: () => void
+  linesRows: ScheduleRow[]
+  setLinesRows: Dispatch<SetStateAction<ScheduleRow[]>>
+  showLines: boolean
+  schedStatus: string
+  schedLoading: boolean
+  simsRunning: boolean
+  handleLoadSchedule: () => void | Promise<void>
+  handleRunAllSims: () => void
+  handleExport: () => void
+  handleFetchResults: (forPredictor?: boolean) => void | Promise<void>
+  fetchingResults: boolean
+  editingIdx: number | null
+  setEditingIdx: Dispatch<SetStateAction<number | null>>
+  editFields: Partial<EditableOddsFields>
+  setEditFields: Dispatch<SetStateAction<Partial<EditableOddsFields>>>
+  startEdit: (idx: number) => void
+  saveEdit: (idx: number) => void
+}
+
+type B2BField = "homeB2B" | "awayB2B"
+type EditFieldKey = keyof EditableOddsFields
+type BestBet = {
+  matchup: string
+  type: "ML" | "SPR" | "O/U"
+  pick: string
+  proj: string
+  odds: string
+  edge: number
+  kelly: number
+}
+
+const B2B_FIELDS: Array<{ field: B2BField; getAbbr: (row: ScheduleRow) => TeamAbbr }> = [
+  { field: "homeB2B", getAbbr: (row) => row.game.homeAbbr },
+  { field: "awayB2B", getAbbr: (row) => row.game.awayAbbr },
+]
+
+const EDIT_FIELDS: Array<{ label: string; field: EditFieldKey }> = [
+  { label: "H ML", field: "homeMoneyline" },
+  { label: "A ML", field: "awayMoneyline" },
+  { label: "Spread", field: "spread" },
+  { label: "Spr H Odds", field: "spreadHomeOdds" },
+  { label: "Spr A Odds", field: "spreadAwayOdds" },
+  { label: "O/U", field: "overUnder" },
+  { label: "Over", field: "overOdds" },
+  { label: "Under", field: "underOdds" },
+]
 
 export default function ScheduleAnalysis({
   card,
@@ -32,7 +110,7 @@ export default function ScheduleAnalysis({
   setEditFields,
   startEdit,
   saveEdit,
-}) {
+}: ScheduleAnalysisProps) {
   const hasSimResults = linesRows.some((row) => row.simResult);
 
   return (
@@ -153,9 +231,9 @@ export default function ScheduleAnalysis({
                       </td>
                       <td style={{ padding:"5px 6px", borderBottom:"1px solid #1a1000" }}>
                         <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                          {[["homeB2B", row.game.homeAbbr], ["awayB2B", row.game.awayAbbr]].map(([field, abbr]) => (
+                          {B2B_FIELDS.map(({ field, getAbbr }) => (
                             <button key={field} onClick={() => setLinesRows((prev) => prev.map((currentRow, rowIndex) => rowIndex === idx ? { ...currentRow, [field]: !currentRow[field], simResult:null } : currentRow))} style={{ background:row[field] ? "rgba(251,113,133,0.12)" : "transparent", border:`1px solid ${row[field] ? "rgba(251,113,133,0.35)" : "#251800"}`, borderRadius:3, padding:"2px 5px", color:row[field] ? "#fda4af" : "#3a2a1a", fontSize:9, fontWeight:700, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
-                              {abbr} B2B
+                              {getAbbr(row)} B2B
                             </button>
                           ))}
                         </div>
@@ -175,16 +253,7 @@ export default function ScheduleAnalysis({
                       <tr style={{ background:"#0c0600" }}>
                         <td colSpan={17} style={{ padding:"10px 8px", borderBottom:"1px solid #251800" }}>
                           <div style={{ display:"grid", gridTemplateColumns:"repeat(8,1fr)", gap:6, alignItems:"end" }}>
-                            {[
-                              ["H ML", "homeMoneyline"],
-                              ["A ML", "awayMoneyline"],
-                              ["Spread", "spread"],
-                              ["Spr H Odds", "spreadHomeOdds"],
-                              ["Spr A Odds", "spreadAwayOdds"],
-                              ["O/U", "overUnder"],
-                              ["Over", "overOdds"],
-                              ["Under", "underOdds"],
-                            ].map(([label, field]) => (
+                            {EDIT_FIELDS.map(({ label, field }) => (
                               <div key={field}>
                                 <div style={{ fontSize:9, color:"#5a4a2a", letterSpacing:1, marginBottom:3 }}>{label}</div>
                                 <input value={editFields[field] ?? ""} onChange={(e) => setEditFields((prev) => ({ ...prev, [field]: e.target.value }))} style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(255,200,80,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"4px 6px", boxSizing:"border-box", outline:"none" }} />
@@ -222,6 +291,7 @@ export default function ScheduleAnalysis({
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))", gap:10 }}>
               {simmed.map((row, index) => {
                 const sim = row.simResult;
+                if (!sim) return null;
                 const odds = row.editedOdds || { homeMoneyline:null, awayMoneyline:null, spread:null, spreadHomeOdds:-110, spreadAwayOdds:-110, overUnder:null, overOdds:-110, underOdds:-110 };
                 const hasOdds = !!(row.editedOdds && odds.homeMoneyline != null && odds.overUnder != null);
                 const analysis = hasOdds ? analyzeBetting(sim, odds) : null;
@@ -264,6 +334,7 @@ export default function ScheduleAnalysis({
                       </div>
                     )}
                     {hasOdds && (() => {
+                      if (!analysis) return null;
                       const modelHomeML = mlAmerican(sim.hWinProb);
                       const modelAwayML = mlAmerican(sim.aWinProb);
                       const mlGood = analysis.mlValueSide !== "none";
@@ -301,6 +372,7 @@ export default function ScheduleAnalysis({
                       );
                     })()}
                     {hasOdds && (() => {
+                      if (!analysis) return null;
                       const spreadGood = analysis.spreadRec !== "pass";
                       const sideHome = spreadGood && analysis.spreadRec.startsWith("home");
                       const spreadLabel = spreadGood ? (sideHome ? `${row.game.homeAbbr} ${odds.spread > 0 ? "+" : ""}${odds.spread}` : `${row.game.awayAbbr} ${odds.spread <= 0 ? "+" : ""}${Math.abs(odds.spread)}`) : null;
@@ -338,6 +410,7 @@ export default function ScheduleAnalysis({
                       );
                     })()}
                     {hasOdds && (() => {
+                      if (!analysis) return null;
                       const ouGood = analysis.ouRec !== "pass";
                       const overOdds = odds.overOdds || -110;
                       const underOdds = odds.underOdds || -110;
@@ -375,6 +448,10 @@ export default function ScheduleAnalysis({
                     <div style={{ display:"grid", gridTemplateColumns:hasOdds ? "1fr 1fr" : "1fr", gap:6 }}>
                       {hasOdds && (
                         <div style={{ background:"#0a0600", borderRadius:5, padding:"9px 10px", border:"1px solid #1a1000" }}>
+                          {(() => {
+                            if (!analysis) return null;
+                            return (
+                              <>
                           <div style={{ fontSize:8, color:"#5a4a2a", letterSpacing:2, fontWeight:700, marginBottom:6 }}>MODEL EDGE SUMMARY</div>
                           {[
                             { label:"ML", value:analysis.mlValueSide !== "none", text:analysis.mlValueSide !== "none" ? `${analysis.mlValueSide === "home" ? row.game.homeAbbr : row.game.awayAbbr} +${analysis.mlValuePct.toFixed(1)}%` : "-" },
@@ -401,6 +478,9 @@ export default function ScheduleAnalysis({
                               ))}
                             </div>
                           </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
                       <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
@@ -425,7 +505,7 @@ export default function ScheduleAnalysis({
       })()}
 
       {hasSimResults && (() => {
-        const bets = [];
+        const bets: BestBet[] = [];
         for (const row of linesRows) {
           const sim = row.simResult;
           if (!sim) continue;
@@ -456,7 +536,7 @@ export default function ScheduleAnalysis({
         }
         if (!bets.length) return null;
         bets.sort((a, b) => b.edge - a.edge);
-        const typeColor = { ML:"#fbbf24", SPR:"#60a5fa", "O/U":"#a78bfa" };
+        const typeColor: Record<BestBet["type"], string> = { ML:"#fbbf24", SPR:"#60a5fa", "O/U":"#a78bfa" };
         return (
           <div style={{ ...card, marginTop:10, border:"1px solid rgba(63,185,80,0.25)", padding:"10px 12px", maxWidth:"66%" }}>
             <div style={{ fontSize:9, fontWeight:700, color:"#3fb950", letterSpacing:3, marginBottom:8 }}>BEST BETS | {bets.length} PLAYS | SORTED BY EDGE</div>

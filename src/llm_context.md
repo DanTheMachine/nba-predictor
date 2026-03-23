@@ -13,10 +13,16 @@
 - Extracted betting helpers and shared types:
   - `src/lib/betting.ts`
   - `src/lib/nbaTypes.ts`
+- Extracted additional typed helper modules:
+  - `src/lib/resultsTracker.ts`
+  - `src/lib/bulkOddsParser.ts`
 - Extracted core model/domain logic:
   - `src/lib/nbaModel.ts`
 - Extracted ESPN/network helpers:
   - `src/lib/espn.ts`
+- Extracted stateful workflow hooks:
+  - `src/hooks/useResultsTracker.ts`
+  - `src/hooks/usePredictorState.ts`
 - Extracted reusable UI components:
   - `src/components/CourtBar.tsx`
   - `src/components/StatBar.tsx`
@@ -24,6 +30,9 @@
   - `src/components/ResultsTracker.tsx`
   - `src/components/ScheduleAnalysis.tsx`
   - `src/components/ModelEvaluation.tsx`
+  - `src/components/SingleGameControls.tsx`
+  - `src/components/SingleGameResults.tsx`
+  - `src/components/BBRefImportPanel.tsx`
 
 ## Evaluation And CSV Changes
 
@@ -73,6 +82,15 @@
   - best-bets summary panel
 - `NBAModel.tsx` now acts more like a coordinator and passes state/handlers into `ScheduleAnalysis`.
 
+## Results Tracker Refactor Status
+
+- The legacy in-file results workflow was removed from `src/NBAModel.tsx`.
+- Results parsing, grading, and aggregation now live in:
+  - `src/lib/resultsTracker.ts`
+- The active Results tab state and handlers now live in:
+  - `src/hooks/useResultsTracker.ts`
+- `NBAModel.tsx` now consumes the hook instead of duplicating the workflow inline.
+
 ## Predictor UI Changes
 
 - The single-game workflow is now behind a closed-by-default panel below `TODAY'S GAMES & EXPORT`.
@@ -85,7 +103,26 @@
   - advanced stats comparison
   - single-game simulation
   - single-game line fetching/manual odds controls
-- There is still some legacy/mojibake-heavy JSX in `src/NBAModel.tsx`, and one earlier copy of the single-game toggle area was hidden rather than deeply removed to reduce risk.
+- That UI is no longer rendered inline in `NBAModel.tsx`; it now lives in:
+  - `src/components/SingleGameControls.tsx`
+- The post-simulation predictor display also now lives outside the monolith in:
+  - `src/components/SingleGameResults.tsx`
+- The Basketball Reference import panel now lives in:
+  - `src/components/BBRefImportPanel.tsx`
+- The single-game predictor state/actions now live in:
+  - `src/hooks/usePredictorState.ts`
+- `NBAModel.tsx` still has mojibake-heavy legacy text/style strings, but it is materially smaller and more coordinator-oriented than before.
+
+## Bulk Odds Parser Status
+
+- Bulk sportsbook paste parsing was extracted from `NBAModel.tsx` into:
+  - `src/lib/bulkOddsParser.ts`
+- Focused unit coverage was added in:
+  - `src/lib/bulkOddsParser.test.ts`
+- This parser now handles:
+  - standard two-team sportsbook blocks
+  - `EVEN`
+  - fractional glyph variants like `½`
 
 ## Testing And CI
 
@@ -97,6 +134,10 @@
   - `.github/workflows/ci.yml`
 - Current test coverage includes:
   - betting math unit tests in `src/lib/betting.test.ts`
+  - bulk odds parser unit tests in `src/lib/bulkOddsParser.test.ts`
+  - predictor hook tests in `src/hooks/usePredictorState.test.ts`
+  - results tracker hook tests in `src/hooks/useResultsTracker.test.ts`
+  - single-game results component tests in `src/components/SingleGameResults.test.tsx`
   - evaluator parser/grading unit tests in `src/lib/modelEvaluation.test.ts`
   - evaluator component tests in `src/components/ModelEvaluation.test.tsx`
   - export contract test in `src/NBAModel.test.tsx`
@@ -110,14 +151,20 @@
 ## Important Notes
 
 - Some legacy text in the project still contains mojibake/non-ASCII artifacts from the original source.
-- We have been preserving behavior over cleanup, so some extracted components still use broad props and `// @ts-nocheck`.
+- We have been preserving behavior over cleanup, so some extracted components still use broad prop contracts.
 - We improved the prediction formula, but it has not yet been backtested against historical NBA results. The next serious model-quality step is calibration against real game outcomes and/or closing lines.
-- `src/NBAModel.tsx` remains the biggest unfinished refactor target and still contains a large amount of inline UI/state logic.
+- `src/NBAModel.tsx` still has `// @ts-nocheck`, but much of the predictor/results UI and workflow logic has already been pushed into hooks/components/helpers.
+- `npm run typecheck` is currently passing after the latest extractions.
+- The latest focused test run for:
+  - `src/hooks/usePredictorState.test.ts`
+  - `src/hooks/useResultsTracker.test.ts`
+  - `src/components/SingleGameResults.test.tsx`
+  passed `7/7`.
 
 ## Best Next Steps
 
-1. Remove `@ts-nocheck` from `src/NBAModel.tsx` by typing remaining state and helpers.
-2. Break up `src/components/ScheduleAnalysis.tsx` into smaller typed subcomponents if needed.
-3. Backtest the updated model against historical NBA results to tune win-probability calibration and spread/total variance assumptions.
-4. Extract remaining predictor-tab UI from `src/NBAModel.tsx` if we want to keep shrinking the coordinator file.
-5. Decide whether to keep expanding browser tests around results import/export or shift effort into historical model validation.
+1. Add tests for `src/components/SingleGameControls.tsx`, since it is now one of the main extracted predictor UI surfaces without direct coverage.
+2. Keep shrinking `src/NBAModel.tsx` by extracting the remaining small predictor shell pieces, such as the ESPN colors banner and toggle/header wrappers.
+3. Consider a `useScheduleAnalysisState`-style hook if we want the schedule/export workflow to follow the same pattern as results and single-game predictor state.
+4. Remove `@ts-nocheck` from `src/NBAModel.tsx` by typing the remaining state/helpers after a few more extractions.
+5. Backtest the updated model against historical NBA results to tune win-probability calibration and spread/total variance assumptions.

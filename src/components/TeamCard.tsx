@@ -1,7 +1,14 @@
-// @ts-nocheck
 import { TEAMS } from "../lib/nbaModel";
+import type { ESPNTeamColorMap, LiveStatsMap, TeamAbbr } from "../lib/nbaTypes";
 
-export default function TeamCard({ abbr, side, espnData, liveStats }) {
+type TeamCardProps = {
+  abbr: TeamAbbr
+  side: "HOME" | "AWAY"
+  espnData: ESPNTeamColorMap | null
+  liveStats: LiveStatsMap
+}
+
+export default function TeamCard({ abbr, side, espnData, liveStats }: TeamCardProps) {
   const base  = TEAMS[abbr];
   const live  = liveStats?.[abbr];
   const s     = live ? { ...base, ...live } : base;

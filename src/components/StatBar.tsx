@@ -1,7 +1,18 @@
-// @ts-nocheck
-export default function StatBar({ label, hVal, aVal, hColor, aColor, lo, hi, invert=false, fmt="num" }) {
-  const norm = v => Math.max(0, Math.min(100, ((v-lo)/(hi-lo))*100));
-  const disp = v => fmt==="pct" ? `${v.toFixed(1)}%` : v.toFixed(1);
+type StatBarProps = {
+  label: string
+  hVal: number
+  aVal: number
+  hColor: string
+  aColor: string
+  lo: number
+  hi: number
+  invert?: boolean
+  fmt?: "num" | "pct"
+}
+
+export default function StatBar({ label, hVal, aVal, hColor, aColor, lo, hi, invert=false, fmt="num" }: StatBarProps) {
+  const norm = (v: number) => Math.max(0, Math.min(100, ((v-lo)/(hi-lo))*100));
+  const disp = (v: number) => fmt==="pct" ? `${v.toFixed(1)}%` : v.toFixed(1);
   const mid  = (lo+hi)/2;
   return (
     <div style={{ marginBottom:10 }}>

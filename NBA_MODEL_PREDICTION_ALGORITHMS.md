@@ -15,6 +15,13 @@ The core engine currently lives in:
 - [nbaModel.ts](C:\projects\game_sims\nba-predictor\src\lib\nbaModel.ts)
 - [betting.ts](C:\projects\game_sims\nba-predictor\src\lib\betting.ts)
 
+The predictor workflow around that engine is now split across:
+
+- [usePredictorState.ts](C:\projects\game_sims\nba-predictor\src\hooks\usePredictorState.ts)
+- [SingleGameControls.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameControls.tsx)
+- [SingleGameResults.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameResults.tsx)
+- [BBRefImportPanel.tsx](C:\projects\game_sims\nba-predictor\src\components\BBRefImportPanel.tsx)
+
 ## 1. Inputs
 
 For each matchup, the engine starts with team-level ratings.
@@ -261,6 +268,12 @@ The model ultimately normalizes these into:
 - `overOdds`
 - `underOdds`
 
+Bulk sportsbook text parsing now lives in:
+
+- [bulkOddsParser.ts](C:\projects\game_sims\nba-predictor\src\lib\bulkOddsParser.ts)
+
+That parser is responsible only for turning pasted sportsbook text into normalized odds objects; it does not run simulations or grade outcomes.
+
 ## 7. Converting Sportsbook Terms Into Fair Probabilities
 
 Before comparing model outputs to sportsbook prices, the model removes vig.
@@ -475,6 +488,12 @@ The evaluation logic currently lives in:
 - [modelEvaluation.ts](C:\projects\game_sims\nba-predictor\src\lib\modelEvaluation.ts)
 - [ModelEvaluation.tsx](C:\projects\game_sims\nba-predictor\src\components\ModelEvaluation.tsx)
 
+The in-app Results tracker workflow also now has its own extracted parsing/state layer:
+
+- [resultsTracker.ts](C:\projects\game_sims\nba-predictor\src\lib\resultsTracker.ts)
+- [useResultsTracker.ts](C:\projects\game_sims\nba-predictor\src\hooks\useResultsTracker.ts)
+- [ResultsTracker.tsx](C:\projects\game_sims\nba-predictor\src\components\ResultsTracker.tsx)
+
 The evaluator:
 
 - parses both CSV files
@@ -599,3 +618,22 @@ The most likely future improvements are:
 - weighting recent form separately from season-long baselines
 - adding injury and lineup adjustments
 - benchmarking model outputs against market close for calibration diagnostics
+
+## 16. Testing Coverage Around The Model
+
+The current refactor also added targeted coverage around the extracted prediction workflow pieces.
+
+Important tests now include:
+
+- [betting.test.ts](C:\projects\game_sims\nba-predictor\src\lib\betting.test.ts)
+- [bulkOddsParser.test.ts](C:\projects\game_sims\nba-predictor\src\lib\bulkOddsParser.test.ts)
+- [usePredictorState.test.ts](C:\projects\game_sims\nba-predictor\src\hooks\usePredictorState.test.ts)
+- [useResultsTracker.test.ts](C:\projects\game_sims\nba-predictor\src\hooks\useResultsTracker.test.ts)
+- [SingleGameResults.test.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameResults.test.tsx)
+
+These do not fully validate model quality, but they do protect:
+
+- odds normalization
+- predictor state transitions
+- results import/grading aggregation
+- single-game recommendation rendering

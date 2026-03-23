@@ -1,4 +1,31 @@
-// @ts-nocheck
+import type { Dispatch, SetStateAction } from 'react'
+
+import type { GradedPredictionRow, PredictionLogEntry, ResultLogEntry, TrackerStats } from '../lib/nbaTypes'
+
+type ResultsTrackerProps = {
+  resultsStatus: string
+  resultsError: string
+  gradedRows: GradedPredictionRow[]
+  stats: TrackerStats
+  handleFetchResults: (forPredictor?: boolean) => void | Promise<void>
+  fetchingResults: boolean
+  showResultsPaste: boolean
+  setShowResultsPaste: Dispatch<SetStateAction<boolean>>
+  showPredPaste: boolean
+  setShowPredPaste: Dispatch<SetStateAction<boolean>>
+  resultsLog: ResultLogEntry[]
+  predLog: PredictionLogEntry[]
+  setResultsLog: Dispatch<SetStateAction<ResultLogEntry[]>>
+  setPredLog: Dispatch<SetStateAction<PredictionLogEntry[]>>
+  setResultsStatus: Dispatch<SetStateAction<string>>
+  resultsPaste: string
+  setResultsPaste: Dispatch<SetStateAction<string>>
+  handleImportResults: () => void
+  predPaste: string
+  setPredPaste: Dispatch<SetStateAction<string>>
+  handleImportPredictions: () => void
+}
+
 export default function ResultsTracker({
   resultsStatus,
   resultsError,
@@ -21,7 +48,7 @@ export default function ResultsTracker({
   predPaste,
   setPredPaste,
   handleImportPredictions,
-}) {
+}: ResultsTrackerProps) {
   return (
     <div style={{ animation:"fadeUp 0.2s ease" }}>
       {resultsStatus && <div style={{ fontSize:11, color:"#3fb950", marginBottom:10, fontFamily:"monospace" }}>OK {resultsStatus}</div>}
@@ -95,13 +122,14 @@ export default function ResultsTracker({
               <tbody>
                 {gradedRows.map((row,i) => {
                   const has = row.graded;
-                  const wC  = v => v===true?"#3fb950":v===false?"#f87171":"#5a4a2a";
+                  const resultRow = row.res
+                  const wC  = (v: boolean | null | undefined) => v===true?"#3fb950":v===false?"#f87171":"#5a4a2a";
                   return (
                     <tr key={i} style={{ borderBottom:"1px solid rgba(255,200,80,0.05)", background:i%2===0?"transparent":"rgba(255,200,80,0.015)" }}>
                       <td style={{ padding:"6px 8px", color:"#7a6a3a", whiteSpace:"nowrap" }}>{row.date}</td>
                       <td style={{ padding:"6px 8px", color:"#e8d5a0", fontWeight:700, whiteSpace:"nowrap" }}>{row.home} vs {row.away}</td>
                       <td style={{ padding:"6px 8px", color:"#9a8a5a", whiteSpace:"nowrap" }}>{row.hProj&&row.aProj?`${row.hProj}-${row.aProj}`:"-"}</td>
-                      <td style={{ padding:"6px 8px", color:has?"#e8d5a0":"#3a2a1a", fontWeight:has?700:400, whiteSpace:"nowrap" }}>{has?`${row.res.hScore}-${row.res.aScore}`:"pending"}</td>
+                      <td style={{ padding:"6px 8px", color:has?"#e8d5a0":"#3a2a1a", fontWeight:has?700:400, whiteSpace:"nowrap" }}>{has&&resultRow?`${resultRow.hScore}-${resultRow.aScore}`:"pending"}</td>
                       <td style={{ padding:"6px 8px", color:has?wC(row.ouWin):"#5a4a2a", whiteSpace:"nowrap" }}>{has?row.actualTotal:"-"}{row.modelTotal?` (m${row.modelTotal})`:""}</td>
                       <td style={{ padding:"6px 8px", color:"#7a6a3a" }}>{row.vegaOU??"-"}</td>
                       <td style={{ padding:"6px 8px", whiteSpace:"nowrap" }}>
@@ -113,17 +141,17 @@ export default function ResultsTracker({
                       </td>
                       <td style={{ padding:"6px 8px", whiteSpace:"nowrap" }}>
                         <span style={{ color:has&&row.mlWin!==null?wC(row.mlWin):"#3a2a1a", fontWeight:700 }}>{has&&row.mlWin!==null?(row.mlWin?"WIN":"LOSS"):"-"}</span>
-                        {has&&row.mlWin!==null&&<span style={{ fontSize:9, color:wC(row.mlWin), marginLeft:4 }}>{row.mlROI>=0?"+":""}{row.mlROI.toFixed(2)}u</span>}
+                        {has&&row.mlWin!==null&&row.mlROI!=null&&<span style={{ fontSize:9, color:wC(row.mlWin), marginLeft:4 }}>{row.mlROI>=0?"+":""}{row.mlROI.toFixed(2)}u</span>}
                       </td>
                       <td style={{ padding:"6px 8px", color:"#9a8a5a", whiteSpace:"nowrap", fontSize:10 }}>{row.sprRec&&row.sprRec!=="-"&&row.sprRec!=="PASS"?row.sprRec:"PASS"}</td>
                       <td style={{ padding:"6px 8px", whiteSpace:"nowrap" }}>
                         <span style={{ color:has&&row.sprWin!==null?wC(row.sprWin):"#3a2a1a", fontWeight:700 }}>{has&&row.sprWin!==null?(row.sprWin?"WIN":"LOSS"):"-"}</span>
-                        {has&&row.sprWin!==null&&<span style={{ fontSize:9, color:wC(row.sprWin), marginLeft:4 }}>{row.sprROI>=0?"+":""}{row.sprROI.toFixed(2)}u</span>}
+                        {has&&row.sprWin!==null&&row.sprROI!=null&&<span style={{ fontSize:9, color:wC(row.sprWin), marginLeft:4 }}>{row.sprROI>=0?"+":""}{row.sprROI.toFixed(2)}u</span>}
                       </td>
                       <td style={{ padding:"6px 8px", whiteSpace:"nowrap" }}>
-                        {has?(
-                          <span style={{ fontSize:9, padding:"2px 7px", borderRadius:3, background:row.res.hScore>row.res.aScore?"rgba(251,191,36,0.1)":"rgba(255,100,100,0.08)", color:row.res.hScore>row.res.aScore?"#fbbf24":"#f87171", border:`1px solid ${row.res.hScore>row.res.aScore?"rgba(251,191,36,0.25)":"rgba(255,100,100,0.2)"}` }}>
-                            {row.res.hScore>row.res.aScore?row.home:row.away} +{Math.abs(row.res.hScore-row.res.aScore)}
+                        {has&&resultRow?(
+                          <span style={{ fontSize:9, padding:"2px 7px", borderRadius:3, background:resultRow.hScore>resultRow.aScore?"rgba(251,191,36,0.1)":"rgba(255,100,100,0.08)", color:resultRow.hScore>resultRow.aScore?"#fbbf24":"#f87171", border:`1px solid ${resultRow.hScore>resultRow.aScore?"rgba(251,191,36,0.25)":"rgba(255,100,100,0.2)"}` }}>
+                            {resultRow.hScore>resultRow.aScore?row.home:row.away} +{Math.abs(resultRow.hScore-resultRow.aScore)}
                           </span>
                         ):<span style={{ color:"#3a2a1a" }}>-</span>}
                       </td>

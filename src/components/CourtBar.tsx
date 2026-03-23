@@ -1,5 +1,10 @@
-// @ts-nocheck
-export default function CourtBar({ hProb, hColor, aColor }) {
+type CourtBarProps = {
+  hProb: number
+  hColor: string
+  aColor: string
+}
+
+export default function CourtBar({ hProb, hColor, aColor }: CourtBarProps) {
   return (
     <div style={{ position:"relative", height:54, borderRadius:8, overflow:"hidden", border:"1px solid rgba(255,200,80,0.12)" }}>
       <div style={{ position:"absolute", left:"50%", top:0, bottom:0, width:2, background:"rgba(255,200,80,0.12)", zIndex:3 }} />

@@ -12,6 +12,15 @@ Main app file:
 
 - [NBAModel.tsx](C:\projects\game_sims\nba-predictor\src\NBAModel.tsx)
 
+Current extracted workflow pieces:
+
+- [usePredictorState.ts](C:\projects\game_sims\nba-predictor\src\hooks\usePredictorState.ts)
+- [SingleGameControls.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameControls.tsx)
+- [SingleGameResults.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameResults.tsx)
+- [BBRefImportPanel.tsx](C:\projects\game_sims\nba-predictor\src\components\BBRefImportPanel.tsx)
+- [useResultsTracker.ts](C:\projects\game_sims\nba-predictor\src\hooks\useResultsTracker.ts)
+- [ScheduleAnalysis.tsx](C:\projects\game_sims\nba-predictor\src\components\ScheduleAnalysis.tsx)
+
 Local proxy:
 
 - [proxy.ts](C:\projects\game_sims\nba-predictor\proxy.ts)
@@ -457,6 +466,18 @@ What this covers:
 
 - component rendering and interaction tests
 - CSV evaluation logic through UI-facing test cases
+- extracted hook tests for predictor/results workflows
+- extracted helper tests such as bulk odds parsing
+
+Examples of focused test runs:
+
+```powershell
+npm run test -- --run src/hooks/usePredictorState.test.ts src/hooks/useResultsTracker.test.ts src/components/SingleGameResults.test.tsx
+```
+
+```powershell
+npm run test -- --run src/lib/bulkOddsParser.test.ts
+```
 
 ### 12.2 Playwright UI tests
 
@@ -482,3 +503,4 @@ First-time note:
 - The proxy must remain running for ESPN-backed features.
 - The model can still run without BBRef imports, but then it uses baseline estimates instead of refreshed advanced stats.
 - Results grading works best when predictions and results are exported in the same workflow cycle.
+- `NBAModel.tsx` is now more of a coordinator than before, but it still has `// @ts-nocheck`, so typecheck passing does not yet mean the entire predictor shell is fully typed.
