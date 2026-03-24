@@ -5,6 +5,7 @@ import type {
   OddsInput,
   PredictionResult,
   SharpLeanSide,
+  SharpLeanValue,
   SharpMarketContext,
   SharpSignalInput,
   ScheduleRow,
@@ -17,6 +18,12 @@ function pushTag(tags: SharpMarketContext['tags'], label: string, aligned: boole
 function signedGap(money: number | null | undefined, bets: number | null | undefined): number | null {
   if (money == null || bets == null) return null
   return money - bets
+}
+
+function leanValues(lean: SharpLeanValue | undefined): SharpLeanSide[] {
+  if (!lean) return []
+  const values = Array.isArray(lean) ? lean : [lean]
+  return values.filter((value): value is SharpLeanSide => value != null && value !== 'none')
 }
 
 export function normalizeSharpSignals(
@@ -58,14 +65,18 @@ export function normalizeSharpSignals(
   if (totalOverSplitGap != null) {
     pushTag(tags, 'Total splits', totalOverSplitGap > 0, `Money-bets gap ${totalOverSplitGap > 0 ? '+' : ''}${totalOverSplitGap.toFixed(1)}%`)
   }
-  if (sharpInput.clvLean && sharpInput.clvLean !== 'none') {
-    pushTag(tags, 'CLV lean', true, `CLV lean ${sharpInput.clvLean.toUpperCase()}`)
+  const clvValues = leanValues(sharpInput.clvLean)
+  const steamValues = leanValues(sharpInput.steamMoveLean)
+  const rlmValues = leanValues(sharpInput.reverseLineMoveLean)
+
+  if (clvValues.length) {
+    pushTag(tags, 'CLV lean', true, `CLV lean ${clvValues.map((value) => value.toUpperCase()).join(', ')}`)
   }
-  if (sharpInput.steamMoveLean && sharpInput.steamMoveLean !== 'none') {
-    pushTag(tags, 'Steam', true, `Steam on ${sharpInput.steamMoveLean.toUpperCase()}`)
+  if (steamValues.length) {
+    pushTag(tags, 'Steam', true, `Steam on ${steamValues.map((value) => value.toUpperCase()).join(', ')}`)
   }
-  if (sharpInput.reverseLineMoveLean && sharpInput.reverseLineMoveLean !== 'none') {
-    pushTag(tags, 'RLM', true, `Reverse line move on ${sharpInput.reverseLineMoveLean.toUpperCase()}`)
+  if (rlmValues.length) {
+    pushTag(tags, 'RLM', true, `Reverse line move on ${rlmValues.map((value) => value.toUpperCase()).join(', ')}`)
   }
 
   return {
@@ -109,9 +120,10 @@ function scoreSplit(gap: number | null | undefined, isAlignedPositive: boolean):
   return gap <= -10 ? 6 : gap >= 10 ? -4 : 0
 }
 
-function scoreLean(candidate: SharpLeanSide, lean: SharpLeanSide | undefined, weight: number): number {
-  if (!lean || lean === 'none') return 0
-  return lean === candidate ? weight : -Math.floor(weight / 2)
+function scoreLean(candidate: SharpLeanSide, lean: SharpLeanValue | undefined, weight: number): number {
+  const values = leanValues(lean)
+  if (!values.length) return 0
+  return values.includes(candidate) ? weight : -Math.floor(weight / 2)
 }
 
 function scoreConsensus(

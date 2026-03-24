@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { normalizeSharpSignals } from '../lib/compositeRecommendation'
 
 import ScheduleAnalysis from './ScheduleAnalysis'
 import type {
@@ -167,6 +168,31 @@ const makeRow = (): ScheduleRow => ({
   compositeRecommendation: null,
 })
 
+const makeSharpRow = (): ScheduleRow => ({
+  ...makeRow(),
+  sharpInput: {
+    source: 'manual',
+    lastUpdated: '2026-03-24T01:15:00.000Z',
+    openingHomeMoneyline: -120,
+    openingAwayMoneyline: 110,
+    openingSpread: -2.5,
+    openingTotal: 216.5,
+    moneylineHomeBetsPct: 42,
+    moneylineHomeMoneyPct: 58,
+    spreadHomeBetsPct: 46,
+    spreadHomeMoneyPct: 61,
+    totalOverBetsPct: 63,
+    totalOverMoneyPct: 49,
+    clvLean: ['home', 'under'],
+    steamMoveLean: ['over'],
+    reverseLineMoveLean: ['away'],
+    consensusMoneyline: 'home',
+    consensusSpread: 'away',
+    consensusTotal: 'under',
+    notes: 'Books moved toward Boston while over stayed public.',
+  },
+})
+
 const teams = {
   BOS: makeTeam('Boston Celtics'),
   LAL: makeTeam('Los Angeles Lakers'),
@@ -236,13 +262,76 @@ describe('ScheduleAnalysis', () => {
   })
 
   it('renders the redesigned sharp information sections', () => {
-    renderScheduleAnalysis(makeRow())
+    renderScheduleAnalysis(makeSharpRow())
 
     fireEvent.click(screen.getByRole('button', { name: 'OPEN CARD' }))
 
     expect(screen.getByText('RECENT FORM')).toBeInTheDocument()
     expect(screen.getByText('PROJECTED STARTERS')).toBeInTheDocument()
-    expect(screen.getByText('SHARP')).toBeInTheDocument()
+    expect(screen.getByText('MARKET SIGNALS')).toBeInTheDocument()
     expect(screen.getByText('INJURIES')).toBeInTheDocument()
+    expect(screen.getByText('LINE MOVES')).toBeInTheDocument()
+    expect(screen.getByText('MOVE SUMMARY')).toBeInTheDocument()
+    expect(screen.getByText('SPLITS')).toBeInTheDocument()
+    expect(screen.getByText('CONSENSUS')).toBeInTheDocument()
+    expect(screen.getByText('Vegas Open')).toBeInTheDocument()
+    expect(screen.getByText('Vegas Current')).toBeInTheDocument()
+    expect(screen.getByText('Manual Current')).toBeInTheDocument()
+    expect(screen.getByText('Market read: BOS support')).toBeInTheDocument()
+    expect(screen.getByText('Books moved toward Boston while over stayed public.')).toBeInTheDocument()
+    expect(screen.getByText('CLV: HOME, UNDER')).toBeInTheDocument()
+    expect(screen.getByText('ML: BOS')).toBeInTheDocument()
+    expect(screen.getByText('Total: UNDER')).toBeInTheDocument()
+  })
+
+  it('loads sample sharp context into existing schedule rows', () => {
+    const row = makeRow()
+    const setLinesRows = vi.fn()
+
+    render(
+      <ScheduleAnalysis
+        card={{}}
+        analyzeBetting={() => analysis}
+        mlAmerican={(probability) => (probability >= 0.5 ? '-163' : '+163')}
+        predictGame={() => prediction}
+        liveStats={liveStats}
+        TEAMS={teams}
+        showBulkImport={false}
+        setShowBulkImport={vi.fn()}
+        bulkError=""
+        bulkStatus=""
+        bulkPaste=""
+        setBulkPaste={vi.fn()}
+        handleBulkImport={vi.fn()}
+        linesRows={[row]}
+        setLinesRows={setLinesRows}
+        showLines
+        schedStatus=""
+        schedLoading={false}
+        simsRunning={false}
+        handleLoadSchedule={vi.fn()}
+        handleRunAllSims={vi.fn()}
+        handleExport={vi.fn()}
+        handleFetchResults={vi.fn()}
+        fetchingResults={false}
+        editingIdx={null}
+        setEditingIdx={vi.fn()}
+        editFields={baseEditFields}
+        setEditFields={vi.fn()}
+        startEdit={vi.fn()}
+        saveEdit={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'LOAD SAMPLE SHARP' }))
+
+    expect(setLinesRows).toHaveBeenCalledTimes(1)
+    const updater = setLinesRows.mock.calls[0]?.[0]
+    expect(typeof updater).toBe('function')
+
+    const [updatedRow] = updater([row])
+    expect(updatedRow.sharpInput?.source).toBe('sample')
+    expect(updatedRow.sharpInput?.notes).toContain('sample sharp context')
+    expect(updatedRow.sharpContext).toEqual(normalizeSharpSignals(updatedRow.sharpInput, updatedRow.editedOdds))
   })
 })

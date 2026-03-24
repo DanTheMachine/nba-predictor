@@ -10,6 +10,8 @@ import type {
   LiveStatsMap,
   ScheduleRow,
   SharpLeanSide,
+  SharpLeanValue,
+  SharpSignalInput,
   TeamAbbr,
   TeamStats,
 } from "../lib/nbaTypes";
@@ -56,9 +58,16 @@ type ContextFields = {
   openingTotal: string
   moneylineHomeBetsPct: string
   moneylineHomeMoneyPct: string
-  clvLean: SharpLeanSide
-  steamMoveLean: SharpLeanSide
-  reverseLineMoveLean: SharpLeanSide
+  spreadHomeBetsPct: string
+  spreadHomeMoneyPct: string
+  totalOverBetsPct: string
+  totalOverMoneyPct: string
+  clvLean: string
+  steamMoveLean: string
+  reverseLineMoveLean: string
+  consensusMoneyline: "home" | "away" | "none"
+  consensusSpread: "home" | "away" | "none"
+  consensusTotal: "over" | "under" | "none"
   notes: string
   homeInjuries: string
   awayInjuries: string
@@ -71,9 +80,16 @@ const EMPTY_CONTEXT: ContextFields = {
   openingTotal: "",
   moneylineHomeBetsPct: "",
   moneylineHomeMoneyPct: "",
+  spreadHomeBetsPct: "",
+  spreadHomeMoneyPct: "",
+  totalOverBetsPct: "",
+  totalOverMoneyPct: "",
   clvLean: "none",
   steamMoveLean: "none",
   reverseLineMoveLean: "none",
+  consensusMoneyline: "none",
+  consensusSpread: "none",
+  consensusTotal: "none",
   notes: "",
   homeInjuries: "",
   awayInjuries: "",
@@ -118,6 +134,89 @@ function freshnessColor(value?: string): string {
   return value ? "#3fb950" : "#5a4a2a"
 }
 
+function formatSignedNumber(value: number, digits = 1): string {
+  return `${value > 0 ? "+" : ""}${value.toFixed(digits)}`
+}
+
+function formatPercentGap(value: number | null | undefined): string | null {
+  if (value == null) return null
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
+}
+
+function sharpSideLabel(side: "home" | "away" | "none" | undefined, row: ScheduleRow): string {
+  if (!side || side === "none") return "None"
+  return side === "home" ? row.game.homeAbbr : row.game.awayAbbr
+}
+
+function sharpTotalLabel(side: "over" | "under" | "none" | undefined): string {
+  if (!side || side === "none") return "None"
+  return side.toUpperCase()
+}
+
+function sharpTone(aligned: boolean): string {
+  return aligned ? "#3fb950" : "#f59e0b"
+}
+
+function leanValues(lean: SharpLeanValue | undefined): SharpLeanSide[] {
+  if (!lean) return []
+  const values = Array.isArray(lean) ? lean : [lean]
+  return values.filter((value): value is SharpLeanSide => value != null && value !== "none")
+}
+
+function formatLeanValue(lean: SharpLeanValue | undefined): string {
+  const values = leanValues(lean)
+  return values.length ? values.map((value) => value.toUpperCase()).join(", ") : "NONE"
+}
+
+function parseLeanValue(value: string): SharpLeanValue {
+  const parsed = value
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter((item): item is SharpLeanSide => ["home", "away", "over", "under", "none"].includes(item))
+    .filter((item) => item !== "none")
+
+  if (!parsed.length) return "none"
+  return [...new Set(parsed)]
+}
+
+function hasLean(lean: SharpLeanValue | undefined, candidate: Exclude<SharpLeanSide, "none">): boolean {
+  return leanValues(lean).includes(candidate)
+}
+
+function sampleLean(index: number, cycle: readonly SharpLeanSide[]): SharpLeanSide {
+  return cycle[index % cycle.length] ?? "none"
+}
+
+function buildSampleSharpInput(row: ScheduleRow, index: number): SharpSignalInput | null {
+  if (!row.editedOdds) return null
+
+  const moneylineLean: "home" | "away" = index % 2 === 0 ? "home" : "away"
+  const spreadLean: "home" | "away" = index % 3 === 0 ? "home" : "away"
+  const totalLean: "over" | "under" = index % 2 === 0 ? "over" : "under"
+
+  return {
+    source: "sample",
+    lastUpdated: new Date().toISOString(),
+    openingHomeMoneyline: row.editedOdds.homeMoneyline + (moneylineLean === "home" ? 18 : -14),
+    openingAwayMoneyline: row.editedOdds.awayMoneyline + (moneylineLean === "home" ? -14 : 18),
+    openingSpread: Number((row.editedOdds.spread + (spreadLean === "home" ? 1 : -1)).toFixed(1)),
+    openingTotal: Number((row.editedOdds.overUnder + (totalLean === "over" ? -2.5 : 2)).toFixed(1)),
+    moneylineHomeBetsPct: moneylineLean === "home" ? 41 : 63,
+    moneylineHomeMoneyPct: moneylineLean === "home" ? 57 : 49,
+    spreadHomeBetsPct: spreadLean === "home" ? 44 : 59,
+    spreadHomeMoneyPct: spreadLean === "home" ? 61 : 46,
+    totalOverBetsPct: totalLean === "over" ? 68 : 43,
+    totalOverMoneyPct: totalLean === "over" ? 52 : 61,
+      clvLean: [sampleLean(index, [moneylineLean, "none"]), sampleLean(index + 1, [totalLean, "none"])].filter((value) => value !== "none"),
+      steamMoveLean: [sampleLean(index + 1, [totalLean, "none"]), sampleLean(index + 2, [spreadLean, "none"])].filter((value) => value !== "none"),
+      reverseLineMoveLean: [sampleLean(index + 2, [spreadLean, "none"]), sampleLean(index + 3, [totalLean, "none"])].filter((value) => value !== "none"),
+    consensusMoneyline: moneylineLean,
+    consensusSpread: spreadLean,
+    consensusTotal: totalLean,
+    notes: `${row.game.awayAbbr}/${row.game.homeAbbr}: sample sharp context for UI tuning. Splits, line movement, and lean flags are seeded for preview.`,
+  }
+}
+
 function shortDate(value: string): string {
   if (!value) return value
   const [, month, day] = value.split("-")
@@ -144,9 +243,16 @@ function toContext(row: ScheduleRow): ContextFields {
     openingTotal: row.sharpInput?.openingTotal != null ? String(row.sharpInput.openingTotal) : "",
     moneylineHomeBetsPct: row.sharpInput?.moneylineHomeBetsPct != null ? String(row.sharpInput.moneylineHomeBetsPct) : "",
     moneylineHomeMoneyPct: row.sharpInput?.moneylineHomeMoneyPct != null ? String(row.sharpInput.moneylineHomeMoneyPct) : "",
-    clvLean: row.sharpInput?.clvLean ?? "none",
-    steamMoveLean: row.sharpInput?.steamMoveLean ?? "none",
-    reverseLineMoveLean: row.sharpInput?.reverseLineMoveLean ?? "none",
+    spreadHomeBetsPct: row.sharpInput?.spreadHomeBetsPct != null ? String(row.sharpInput.spreadHomeBetsPct) : "",
+    spreadHomeMoneyPct: row.sharpInput?.spreadHomeMoneyPct != null ? String(row.sharpInput.spreadHomeMoneyPct) : "",
+    totalOverBetsPct: row.sharpInput?.totalOverBetsPct != null ? String(row.sharpInput.totalOverBetsPct) : "",
+    totalOverMoneyPct: row.sharpInput?.totalOverMoneyPct != null ? String(row.sharpInput.totalOverMoneyPct) : "",
+    clvLean: formatLeanValue(row.sharpInput?.clvLean).toLowerCase(),
+    steamMoveLean: formatLeanValue(row.sharpInput?.steamMoveLean).toLowerCase(),
+    reverseLineMoveLean: formatLeanValue(row.sharpInput?.reverseLineMoveLean).toLowerCase(),
+    consensusMoneyline: row.sharpInput?.consensusMoneyline ?? "none",
+    consensusSpread: row.sharpInput?.consensusSpread ?? "none",
+    consensusTotal: row.sharpInput?.consensusTotal ?? "none",
     notes: row.sharpInput?.notes ?? "",
     homeInjuries: row.injuries.filter((i) => i.team === row.game.homeAbbr && i.source === "manual").map((i) => i.note).join("\n"),
     awayInjuries: row.injuries.filter((i) => i.team === row.game.awayAbbr && i.source === "manual").map((i) => i.note).join("\n"),
@@ -168,12 +274,72 @@ function formatSignedOdds(value: number): string {
   return `${value > 0 ? "+" : ""}${value}`
 }
 
+function formatMoneylinePair(homeAbbr: TeamAbbr, awayAbbr: TeamAbbr, homeMoneyline: number, awayMoneyline: number): string {
+  return `${awayAbbr} ${formatSignedOdds(awayMoneyline)} / ${homeAbbr} ${formatSignedOdds(homeMoneyline)}`
+}
+
 function formatSpreadLabel(team: TeamAbbr, spread: number, odds: number): string {
   return `${team} ${spread > 0 ? "+" : ""}${spread} (${formatSignedOdds(odds)})`
 }
 
 function awaySpreadFromHomeSpread(homeSpread: number): number {
   return -homeSpread
+}
+
+function formatSpreadPair(homeAbbr: TeamAbbr, awayAbbr: TeamAbbr, spread: number): string {
+  return `${awayAbbr} ${awaySpreadFromHomeSpread(spread) > 0 ? "+" : ""}${awaySpreadFromHomeSpread(spread)} / ${homeAbbr} ${spread > 0 ? "+" : ""}${spread}`
+}
+
+function formatTotalLabel(total: number): string {
+  return `O/U ${total}`
+}
+
+function inferMarketRead(row: ScheduleRow): string {
+  const sharp = row.sharpContext
+  if (!sharp) return "No market signal yet"
+
+  const homeSupport =
+    (sharp.homeMoneylineMove != null && sharp.homeMoneylineMove > 0 ? 1 : 0) +
+    (sharp.moneylineHomeSplitGap != null && sharp.moneylineHomeSplitGap > 0 ? 1 : 0) +
+    (row.sharpInput?.consensusMoneyline === "home" ? 1 : 0) +
+    (hasLean(row.sharpInput?.clvLean, "home") ? 1 : 0) +
+    (hasLean(row.sharpInput?.steamMoveLean, "home") ? 1 : 0) +
+    (hasLean(row.sharpInput?.reverseLineMoveLean, "home") ? 1 : 0)
+
+  const awaySupport =
+    (sharp.awayMoneylineMove != null && sharp.awayMoneylineMove > 0 ? 1 : 0) +
+    (sharp.moneylineHomeSplitGap != null && sharp.moneylineHomeSplitGap < 0 ? 1 : 0) +
+    (row.sharpInput?.consensusMoneyline === "away" ? 1 : 0) +
+    (hasLean(row.sharpInput?.clvLean, "away") ? 1 : 0) +
+    (hasLean(row.sharpInput?.steamMoveLean, "away") ? 1 : 0) +
+    (hasLean(row.sharpInput?.reverseLineMoveLean, "away") ? 1 : 0)
+
+  const overSupport =
+    (sharp.totalMove != null && sharp.totalMove > 0 ? 1 : 0) +
+    (sharp.totalOverSplitGap != null && sharp.totalOverSplitGap > 0 ? 1 : 0) +
+    (row.sharpInput?.consensusTotal === "over" ? 1 : 0) +
+    (hasLean(row.sharpInput?.clvLean, "over") ? 1 : 0) +
+    (hasLean(row.sharpInput?.steamMoveLean, "over") ? 1 : 0) +
+    (hasLean(row.sharpInput?.reverseLineMoveLean, "over") ? 1 : 0)
+
+  const underSupport =
+    (sharp.totalMove != null && sharp.totalMove < 0 ? 1 : 0) +
+    (sharp.totalOverSplitGap != null && sharp.totalOverSplitGap < 0 ? 1 : 0) +
+    (row.sharpInput?.consensusTotal === "under" ? 1 : 0) +
+    (hasLean(row.sharpInput?.clvLean, "under") ? 1 : 0) +
+    (hasLean(row.sharpInput?.steamMoveLean, "under") ? 1 : 0) +
+    (hasLean(row.sharpInput?.reverseLineMoveLean, "under") ? 1 : 0)
+
+  const reads = [
+    { label: `${row.game.homeAbbr} support`, score: homeSupport },
+    { label: `${row.game.awayAbbr} support`, score: awaySupport },
+    { label: "OVER support", score: overSupport },
+    { label: "UNDER support", score: underSupport },
+  ].sort((a, b) => b.score - a.score)
+
+  if (!reads[0] || reads[0].score <= 0) return "Mixed market signals"
+  if (reads[1] && reads[0].score === reads[1].score) return "Mixed market signals"
+  return `Market read: ${reads[0].label}`
 }
 
 function edgeTone(edge: number | null, passes: boolean): string {
@@ -249,6 +415,19 @@ export default function ScheduleAnalysis({
   )
 
   const hasSimResults = enrichedRows.some((entry) => entry.row.simResult)
+  const hasEditableOdds = linesRows.some((row) => row.editedOdds)
+
+  const loadSampleSharp = (): void => {
+    setLinesRows((prev) => prev.map((currentRow, rowIndex) => {
+      const sharpInput = buildSampleSharpInput(currentRow, rowIndex)
+      if (!sharpInput) return currentRow
+
+      const sharpContext = normalizeSharpSignals(sharpInput, currentRow.editedOdds)
+      const analysis = currentRow.editedOdds && currentRow.simResult ? analyzeBetting(currentRow.simResult, currentRow.editedOdds) : null
+      const nextRow = { ...currentRow, sharpInput, sharpContext }
+      return { ...nextRow, compositeRecommendation: buildCompositeRecommendation(nextRow, analysis) }
+    }))
+  }
 
   const saveContext = (idx: number): void => {
     const row = linesRows[idx]
@@ -263,9 +442,16 @@ export default function ScheduleAnalysis({
       openingTotal: num(contextFields.openingTotal),
       moneylineHomeBetsPct: num(contextFields.moneylineHomeBetsPct),
       moneylineHomeMoneyPct: num(contextFields.moneylineHomeMoneyPct),
-      clvLean: contextFields.clvLean,
-      steamMoveLean: contextFields.steamMoveLean,
-      reverseLineMoveLean: contextFields.reverseLineMoveLean,
+      spreadHomeBetsPct: num(contextFields.spreadHomeBetsPct),
+      spreadHomeMoneyPct: num(contextFields.spreadHomeMoneyPct),
+      totalOverBetsPct: num(contextFields.totalOverBetsPct),
+      totalOverMoneyPct: num(contextFields.totalOverMoneyPct),
+      clvLean: parseLeanValue(contextFields.clvLean),
+      steamMoveLean: parseLeanValue(contextFields.steamMoveLean),
+      reverseLineMoveLean: parseLeanValue(contextFields.reverseLineMoveLean),
+      consensusMoneyline: contextFields.consensusMoneyline,
+      consensusSpread: contextFields.consensusSpread,
+      consensusTotal: contextFields.consensusTotal,
       notes: contextFields.notes.trim(),
     }
     const nextInjuries = [
@@ -297,6 +483,7 @@ export default function ScheduleAnalysis({
         </div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
           <button onClick={handleLoadSchedule} disabled={schedLoading} style={{ background:schedLoading ? "#0f0800" : "#b45309", border:"none", borderRadius:5, padding:"8px 14px", color:schedLoading ? "#3a2a1a" : "#fef3c7", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:schedLoading ? "not-allowed" : "pointer" }}>{schedLoading ? "LOADING..." : linesRows.length ? "RELOAD" : "LOAD GAMES"}</button>
+          {linesRows.length > 0 && <button onClick={loadSampleSharp} disabled={!hasEditableOdds} style={{ background:hasEditableOdds ? "rgba(59,130,246,0.12)" : "rgba(59,130,246,0.04)", border:"1px solid rgba(59,130,246,0.24)", borderRadius:5, padding:"8px 14px", color:hasEditableOdds ? "#bfdbfe" : "#5a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasEditableOdds ? "pointer" : "not-allowed" }}>LOAD SAMPLE SHARP</button>}
           {linesRows.length > 0 && <button onClick={() => setShowBulkImport((prev) => !prev)} style={{ background:showBulkImport ? "rgba(251,191,36,0.12)" : "rgba(255,200,80,0.06)", border:"1px solid rgba(255,200,80,0.2)", borderRadius:5, padding:"8px 14px", color:showBulkImport ? "#fbbf24" : "#9a8a5a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>{showBulkImport ? "HIDE" : "BULK EDIT LINES"}</button>}
           {linesRows.length > 0 && <button onClick={handleRunAllSims} disabled={simsRunning} style={{ background:simsRunning ? "#0f0800" : "#d29922", border:"none", borderRadius:5, padding:"8px 14px", color:simsRunning ? "#3a2a1a" : "#1a0f00", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:simsRunning ? "not-allowed" : "pointer" }}>{simsRunning ? "RUNNING..." : "RUN ALL SIMS"}</button>}
           {hasSimResults && <button onClick={handleExport} style={{ background:"#3fb950", border:"none", borderRadius:5, padding:"8px 14px", color:"#0d1117", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>PREDICTIONS CSV</button>}
@@ -566,12 +753,119 @@ export default function ScheduleAnalysis({
                           </div>
                           <div>
                             <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-                              <div style={{ fontSize:8, color:"#f8e7b4", fontWeight:700 }}>SHARP</div>
+                              <div style={{ fontSize:8, color:"#f8e7b4", fontWeight:700 }} title="Market-based betting context: line moves, split discrepancies, lean flags, consensus, and source freshness.">MARKET SIGNALS</div>
                               <div style={{ fontSize:8, color:freshnessColor(row.sharpContext?.lastUpdated), fontStyle:"italic" }}>
                                 {freshness(row.sharpContext?.lastUpdated)}
                               </div>
                             </div>
-                            <div style={{ fontSize:9, color:"#7a6a3a" }}>{row.sharpContext?.tags.slice(0, 4).map((tag) => tag.detail).join(" � ") || "No sharp data loaded"}</div>
+                            {row.sharpContext ? (
+                              <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:6 }}>
+                                <div style={{ fontSize:8, color:"#bfdbfe", fontWeight:700, letterSpacing:0.6 }} title="Quick read of which side or total has the strongest combined market support from movement, splits, and lean flags.">
+                                  {inferMarketRead(row)}
+                                </div>
+                                <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
+                                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:6 }}>
+                                    <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2 }} title="Opening, manual, and current Vegas market references for this matchup.">LINE MOVES</div>
+                                    <div style={{ fontSize:7, color:"#c9b27a", letterSpacing:1.2 }} title="The provider or origin for the current market-signals dataset.">
+                                      Source: {row.sharpContext.source || "Manual"}
+                                    </div>
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:8 }}>
+                                    <div style={{ background:"rgba(255,200,80,0.03)", border:"1px solid rgba(255,200,80,0.08)", borderRadius:6, padding:"7px 8px" }}>
+                                      <div style={{ fontSize:8, color:"#f8e7b4", marginBottom:4 }} title="Opening line snapshot used for line-move calculations.">Vegas Open</div>
+                                      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                        <div style={{ fontSize:8, color:"#e8d5a0" }} title="Opening moneyline snapshot used for line-move calculations.">
+                                          ML: {row.sharpInput?.openingHomeMoneyline != null && row.sharpInput?.openingAwayMoneyline != null ? formatMoneylinePair(row.game.homeAbbr, row.game.awayAbbr, row.sharpInput.openingHomeMoneyline, row.sharpInput.openingAwayMoneyline) : "N/A"}
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#e8d5a0" }} title="Opening spread snapshot used for line-move calculations.">
+                                          Spread: {row.sharpInput?.openingSpread != null ? formatSpreadPair(row.game.homeAbbr, row.game.awayAbbr, row.sharpInput.openingSpread) : "N/A"}
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#e8d5a0" }} title="Opening total snapshot used for line-move calculations.">
+                                          Total: {row.sharpInput?.openingTotal != null ? formatTotalLabel(row.sharpInput.openingTotal) : "N/A"}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div style={{ background:"rgba(96,165,250,0.05)", border:"1px solid rgba(96,165,250,0.16)", borderRadius:6, padding:"7px 8px" }}>
+                                      <div style={{ fontSize:8, color:"#bfdbfe", marginBottom:4 }} title="The currently active manual or imported line driving analysis on this card.">Manual Current</div>
+                                      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                        <div style={{ fontSize:8, color:"#dbeafe" }} title="Active analysis moneyline snapshot.">
+                                          ML: {row.editedOdds ? formatMoneylinePair(row.game.homeAbbr, row.game.awayAbbr, row.editedOdds.homeMoneyline, row.editedOdds.awayMoneyline) : "N/A"}
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#dbeafe" }} title="Active analysis spread snapshot.">
+                                          Spread: {row.editedOdds ? formatSpreadPair(row.game.homeAbbr, row.game.awayAbbr, row.editedOdds.spread) : "N/A"}
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#dbeafe" }} title="Active analysis total snapshot.">
+                                          Total: {row.editedOdds ? formatTotalLabel(row.editedOdds.overUnder) : "N/A"}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div style={{ background:"rgba(255,200,80,0.03)", border:"1px solid rgba(255,200,80,0.08)", borderRadius:6, padding:"7px 8px" }}>
+                                      <div style={{ fontSize:8, color:"#f8e7b4", marginBottom:4 }} title="The current non-manual market line on the card, typically the ESPN/Vegas line.">Vegas Current</div>
+                                      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                        <div style={{ fontSize:8, color:"#e8d5a0" }} title="Current market moneyline snapshot.">
+                                          ML: {row.espnOdds ? formatMoneylinePair(row.game.homeAbbr, row.game.awayAbbr, row.espnOdds.homeMoneyline, row.espnOdds.awayMoneyline) : "N/A"}
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#e8d5a0" }} title="Current market spread snapshot.">
+                                          Spread: {row.espnOdds ? formatSpreadPair(row.game.homeAbbr, row.game.awayAbbr, row.espnOdds.spread) : "N/A"}
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#e8d5a0" }} title="Current market total snapshot.">
+                                          Total: {row.espnOdds ? formatTotalLabel(row.espnOdds.overUnder) : "N/A"}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:8, alignItems:"start" }}>
+                                  <div style={{ background:"rgba(96,165,250,0.04)", border:"1px solid rgba(96,165,250,0.12)", borderRadius:6, padding:"7px 8px" }}>
+                                    <div style={{ fontSize:7, color:"#bfdbfe", letterSpacing:1.2, marginBottom:4 }} title="Numerical movement from the opening number to the active current line used in the Sharp calculation.">MOVE SUMMARY</div>
+                                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                      <div style={{ fontSize:8, color:"#dbeafe" }} title="Change in the home moneyline's implied probability versus the opener. Positive means the market is pricing the home team more strongly now.">Home ML: {row.sharpContext.homeMoneylineMove != null ? `${formatSignedNumber(row.sharpContext.homeMoneylineMove * 100)} pts` : "N/A"}</div>
+                                      <div style={{ fontSize:8, color:"#dbeafe" }} title="Difference between the current spread and the opening spread. Negative means movement toward the home side.">Spread: {row.sharpContext.spreadMove != null ? formatSignedNumber(row.sharpContext.spreadMove) : "N/A"}</div>
+                                      <div style={{ fontSize:8, color:"#dbeafe" }} title="Difference between the current total and the opening total. Positive means the market moved upward toward the over.">Total: {row.sharpContext.totalMove != null ? formatSignedNumber(row.sharpContext.totalMove) : "N/A"}</div>
+                                    </div>
+                                  </div>
+                                  <div style={{ background:"rgba(96,165,250,0.04)", border:"1px solid rgba(96,165,250,0.12)", borderRadius:6, padding:"7px 8px" }}>
+                                    <div style={{ fontSize:7, color:"#5a6a8a", letterSpacing:1.2, marginBottom:4 }} title="Money minus bets percentage gaps. A positive gap means more money than tickets on that side, which can hint at sharper participation.">SPLITS</div>
+                                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                      <div style={{ fontSize:8, color:"#dbeafe" }} title="Home moneyline money percentage minus home moneyline bet percentage.">ML gap: {formatPercentGap(row.sharpContext.moneylineHomeSplitGap) ?? "N/A"}</div>
+                                      <div style={{ fontSize:8, color:"#dbeafe" }} title="Home spread money percentage minus home spread bet percentage.">Spread gap: {formatPercentGap(row.sharpContext.spreadHomeSplitGap) ?? "N/A"}</div>
+                                      <div style={{ fontSize:8, color:"#dbeafe" }} title="Over money percentage minus over bet percentage.">Total gap: {formatPercentGap(row.sharpContext.totalOverSplitGap) ?? "N/A"}</div>
+                                    </div>
+                                  </div>
+                                  <div style={{ background:"rgba(63,185,80,0.05)", border:"1px solid rgba(63,185,80,0.16)", borderRadius:6, padding:"7px 8px" }}>
+                                    <div style={{ fontSize:7, color:"#6a5a3a", letterSpacing:1.2, marginBottom:4 }} title="Directional flags from external sharp-style reads such as CLV, steam, or reverse-line movement.">LEAN FLAGS</div>
+                                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                      <div style={{ fontSize:8, color:"#e8d5a0" }} title="Closing-line-value lean. Supports one or more comma-separated values like HOME or HOME, UNDER.">CLV: {formatLeanValue(row.sharpInput?.clvLean)}</div>
+                                      <div style={{ fontSize:8, color:"#e8d5a0" }} title="Steam-move lean. Supports one or more comma-separated values like OVER or AWAY, UNDER.">Steam: {formatLeanValue(row.sharpInput?.steamMoveLean)}</div>
+                                      <div style={{ fontSize:8, color:"#e8d5a0" }} title="Reverse-line-move lean. Supports one or more comma-separated values like HOME or HOME, UNDER.">RLM: {formatLeanValue(row.sharpInput?.reverseLineMoveLean)}</div>
+                                    </div>
+                                  </div>
+                                  <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
+                                    <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2, marginBottom:4 }} title="Normalized consensus-style market lean for each market.">CONSENSUS</div>
+                                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                      <div style={{ fontSize:8, color:"#e8d5a0" }} title="Consensus moneyline side.">ML: {sharpSideLabel(row.sharpInput?.consensusMoneyline, row)}</div>
+                                      <div style={{ fontSize:8, color:"#e8d5a0" }} title="Consensus spread side.">Spread: {sharpSideLabel(row.sharpInput?.consensusSpread, row)}</div>
+                                      <div style={{ fontSize:8, color:"#e8d5a0" }} title="Consensus total side.">Total: {sharpTotalLabel(row.sharpInput?.consensusTotal)}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
+                                  <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2, marginBottom:6 }} title="Compact summary of the sharp-style market signals currently detected for this game.">SIGNAL SUMMARY</div>
+                                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                                    {row.sharpContext.tags.length ? row.sharpContext.tags.map((tag, tagIndex) => (
+                                      <div key={`${tag.label}-${tagIndex}`} title={`${tag.label}: ${tag.aligned ? "supports the inferred sharp read" : "is mixed or cautionary"}.`} style={{ fontSize:8, color:sharpTone(tag.aligned), border:`1px solid ${tag.aligned ? "rgba(63,185,80,0.25)" : "rgba(245,158,11,0.25)"}`, background:tag.aligned ? "rgba(63,185,80,0.08)" : "rgba(245,158,11,0.08)", borderRadius:999, padding:"3px 7px" }}>
+                                        {tag.detail}
+                                      </div>
+                                    )) : (
+                                      <div style={{ fontSize:8, color:"#7a6a3a" }}>No sharp flags yet</div>
+                                    )}
+                                  </div>
+                                </div>
+                                {row.sharpInput?.notes ? <div style={{ fontSize:8, color:"#c9b27a", lineHeight:1.5 }} title="Freeform market-signals notes or context.">{row.sharpInput.notes}</div> : null}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize:9, color:"#7a6a3a" }}>No sharp data loaded</div>
+                            )}
                           </div>
                         </div>
                         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
@@ -690,6 +984,10 @@ export default function ScheduleAnalysis({
                             ["Open Total", "openingTotal"],
                             ["ML H Bets%", "moneylineHomeBetsPct"],
                             ["ML H Money%", "moneylineHomeMoneyPct"],
+                            ["Spr H Bets%", "spreadHomeBetsPct"],
+                            ["Spr H Money%", "spreadHomeMoneyPct"],
+                            ["Ovr Bets%", "totalOverBetsPct"],
+                            ["Ovr Money%", "totalOverMoneyPct"],
                           ] as const).map(([label, key]) => (
                             <div key={key}>
                               <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
@@ -703,8 +1001,18 @@ export default function ScheduleAnalysis({
                           ] as const).map(([label, key]) => (
                             <div key={key}>
                               <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
+                              <input value={String(contextFields[key as keyof ContextFields])} onChange={(e) => setContextFields((prev) => ({ ...prev, [key]: e.target.value }))} placeholder="home, under" style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(96,165,250,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"6px", boxSizing:"border-box", outline:"none" }} />
+                            </div>
+                          ))}
+                          {([
+                            ["Consensus ML", "consensusMoneyline", ["none", "home", "away"]],
+                            ["Consensus SPR", "consensusSpread", ["none", "home", "away"]],
+                            ["Consensus O/U", "consensusTotal", ["none", "over", "under"]],
+                          ] as const).map(([label, key, options]) => (
+                            <div key={key}>
+                              <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
                               <select value={String(contextFields[key as keyof ContextFields])} onChange={(e) => setContextFields((prev) => ({ ...prev, [key]: e.target.value }))} style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(96,165,250,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"6px", boxSizing:"border-box", outline:"none" }}>
-                                {["none", "home", "away", "over", "under"].map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+                                {options.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
                               </select>
                             </div>
                           ))}

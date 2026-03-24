@@ -125,6 +125,7 @@ export type BettingAnalysis = {
 }
 
 export type SharpLeanSide = 'home' | 'away' | 'over' | 'under' | 'none'
+export type SharpLeanValue = SharpLeanSide | SharpLeanSide[]
 
 export type SharpSignalInput = {
   source: string
@@ -139,9 +140,9 @@ export type SharpSignalInput = {
   spreadHomeMoneyPct?: number | null
   totalOverBetsPct?: number | null
   totalOverMoneyPct?: number | null
-  clvLean?: SharpLeanSide
-  steamMoveLean?: SharpLeanSide
-  reverseLineMoveLean?: SharpLeanSide
+  clvLean?: SharpLeanValue
+  steamMoveLean?: SharpLeanValue
+  reverseLineMoveLean?: SharpLeanValue
   consensusMoneyline?: 'home' | 'away' | 'none'
   consensusSpread?: 'home' | 'away' | 'none'
   consensusTotal?: 'over' | 'under' | 'none'
