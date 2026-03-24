@@ -43,8 +43,10 @@ type Props = {
   setEditingIdx: Dispatch<SetStateAction<number | null>>
   editFields: Partial<EditableOddsFields>
   setEditFields: Dispatch<SetStateAction<Partial<EditableOddsFields>>>
-  startEdit: (...args: [number]) => void
-  saveEdit: (...args: [number]) => void
+  // eslint-disable-next-line no-unused-vars
+  startEdit: (idx: number) => void
+  // eslint-disable-next-line no-unused-vars
+  saveEdit: (idx: number) => void
 }
 
 type ContextFields = {
@@ -118,7 +120,7 @@ function freshnessColor(value?: string): string {
 
 function shortDate(value: string): string {
   if (!value) return value
-  const [year, month, day] = value.split("-")
+  const [, month, day] = value.split("-")
   if (!month || !day) return value
   return `${month}-${day}`
 }
@@ -201,7 +203,6 @@ function spreadEdgeLabel(row: ScheduleRow, analysis: NonNullable<ReturnType<Prop
 }
 
 export default function ScheduleAnalysis({
-  card,
   analyzeBetting,
   mlAmerican,
   predictGame,
