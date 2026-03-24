@@ -17,6 +17,10 @@ export type ParsedPredictionRow = {
   vegasOU: number | null
   overOdds: number | null
   underOdds: number | null
+  compositeMarket: string
+  compositePick: string
+  compositeScore: number | null
+  compositeTier: string
 }
 
 export type ParsedResultRow = {
@@ -143,6 +147,10 @@ export function parsePredictionsCsv(text: string): ParsedPredictionRow[] {
     vegasOU: findColumnIndex(headers, 'vegas o/u'),
     overOdds: findColumnIndex(headers, 'over odds'),
     underOdds: findColumnIndex(headers, 'under odds'),
+    compositeMarket: findColumnIndex(headers, 'composite market'),
+    compositePick: findColumnIndex(headers, 'composite pick'),
+    compositeScore: findColumnIndex(headers, 'composite score'),
+    compositeTier: findColumnIndex(headers, 'composite tier'),
     lookupKey: findColumnIndex(headers, 'lookupkey'),
   }
 
@@ -175,6 +183,10 @@ export function parsePredictionsCsv(text: string): ParsedPredictionRow[] {
       vegasOU: parseNumber(get(idx.vegasOU)),
       overOdds: parseNumber(get(idx.overOdds)),
       underOdds: parseNumber(get(idx.underOdds)),
+      compositeMarket: get(idx.compositeMarket),
+      compositePick: get(idx.compositePick),
+      compositeScore: parseNumber(get(idx.compositeScore)),
+      compositeTier: get(idx.compositeTier),
     }
   }).filter((row) => row.date && row.home && row.away)
 }

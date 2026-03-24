@@ -36,7 +36,7 @@ test('opens the single-game tools panel from the predictor tab', async ({ page }
 test('exports predictions csv from the today games flow', async ({ page }) => {
   let scoreboardCalls = 0
 
-  await page.route('http://localhost:3001/proxy?url=*', async (route) => {
+  await page.route('http://localhost:3002/proxy?url=*', async (route) => {
     const requestUrl = route.request().url()
     const parsed = new URL(requestUrl)
     const target = decodeURIComponent(parsed.searchParams.get('url') ?? '')
@@ -128,3 +128,4 @@ test('exports predictions csv from the today games flow', async ({ page }) => {
   expect(dataRow).toContain('"BOS Celtics"')
   expect(dataRow).toContain('"LAL Lakers"')
 })
+

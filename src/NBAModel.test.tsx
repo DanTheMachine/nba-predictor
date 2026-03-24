@@ -114,6 +114,18 @@ vi.mock('./lib/espn', () => ({
   downloadCSV: downloadCsvMock,
   fetchB2BTeams: vi.fn(async () => new Set<string>()),
   fetchNBAColors: vi.fn(async () => ({})),
+  fetchProjectedStarters: vi.fn(async () => ({
+    BOS: { team: 'BOS', starters: [{ position: 'PG', player: 'Jrue Holiday' }, { position: 'SG', player: 'Derrick White' }, { position: 'SF', player: 'Jaylen Brown' }, { position: 'PF', player: 'Jayson Tatum' }, { position: 'C', player: 'Kristaps Porzingis' }], source: 'ESPN depth chart', lastUpdated: '2026-03-24T12:00:00.000Z' },
+    LAL: { team: 'LAL', starters: [{ position: 'PG', player: 'Luka Doncic' }, { position: 'SG', player: 'Austin Reaves' }, { position: 'SF', player: 'LeBron James' }, { position: 'PF', player: 'Rui Hachimura' }, { position: 'C', player: 'Jaxson Hayes' }], source: 'ESPN depth chart', lastUpdated: '2026-03-24T12:00:00.000Z' },
+  })),
+  fetchRecentForm: vi.fn(async () => ({
+    BOS: { team: 'BOS', games: [], wins: 0, losses: 0, avgMargin: 0, streak: '-', source: 'ESPN', lastUpdated: '2026-03-23T12:00:00.000Z' },
+    LAL: { team: 'LAL', games: [], wins: 0, losses: 0, avgMargin: 0, streak: '-', source: 'ESPN', lastUpdated: '2026-03-23T12:00:00.000Z' },
+  })),
+  fetchTeamInjuries: vi.fn(async () => ({
+    BOS: [{ team: 'BOS', player: 'Jaylen Brown', status: 'Day-To-Day', note: 'Jaylen Brown - Day-To-Day', source: 'ESPN roster', lastUpdated: '2026-03-23T14:00:00.000Z' }],
+    LAL: [{ team: 'LAL', player: 'LeBron James', status: 'Out', note: 'LeBron James - Out', source: 'ESPN roster', lastUpdated: '2026-03-23T15:00:00.000Z' }],
+  })),
   fetchTodaySchedule: vi.fn(async () => ({
     games: [{ homeAbbr: 'BOS', awayAbbr: 'LAL', gameTime: '7:30 PM' }],
     rawEvents: [{ id: 'event-1' }],
@@ -160,6 +172,10 @@ describe('NBAModel export', () => {
     expect(headerRow).toContain('"Vegas Spread"')
     expect(headerRow).toContain('"Spread Home Odds"')
     expect(headerRow).toContain('"Spread Away Odds"')
+    expect(headerRow).toContain('"Composite Market"')
+    expect(headerRow).toContain('"Composite Pick"')
+    expect(headerRow).toContain('"Composite Score"')
+    expect(headerRow).toContain('"Composite Tier"')
     expect(headerRow).toContain('"LookupKey"')
 
     expect(dataRow).toContain('"HOME - BOS"')
@@ -170,6 +186,9 @@ describe('NBAModel export', () => {
     expect(dataRow).toContain('"-105"')
     expect(dataRow).toContain('"OVER"')
     expect(dataRow).toContain('"HOME -4.5"')
+    expect(dataRow).toContain('"O/U"')
+    expect(dataRow).toContain('"OVER 220.5"')
+    expect(dataRow).toContain('"Model edge 5.1% on OVER 220.5')
     expect(dataRow).toMatch(/"\d{8}BOSLAL"/)
   })
 })

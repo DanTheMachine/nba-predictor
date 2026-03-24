@@ -35,7 +35,7 @@ The NBA predictor uses two local processes:
 Why both are needed:
 
 - the React app serves the browser UI
-- the proxy forwards ESPN API requests through `http://localhost:3001`
+- the proxy forwards ESPN API requests through `VITE_PROXY_BASE_URL`, or `http://localhost:3002` by default
 - features like schedule loading, odds fetches, team color loading, and results export depend on the proxy
 
 ## 3. First-Time Setup
@@ -67,10 +67,25 @@ npm run proxy
 Expected success message:
 
 ```text
-Proxy running on http://localhost:3001
+Proxy running on http://localhost:3002
 ```
 
 Keep this terminal running while you use the app.
+
+Optional custom port:
+
+```powershell
+$env:PORT=3002
+npm run proxy
+```
+
+Optional frontend proxy base URL override:
+
+Create a local `.env` file from `.env.example` and set:
+
+```text
+VITE_PROXY_BASE_URL=http://localhost:3002
+```
 
 ## 5. Start The React App
 
@@ -153,17 +168,25 @@ What it does:
 - pulls today's NBA slate
 - attempts to attach ESPN odds to each game
 - checks which teams are on a back-to-back
-- creates the lines table for the current day
+- fetches recent form, ESPN injuries, and projected starters
+- creates the current day's game cards and attached line data
 
 Typical success message:
 
 - `X games loaded | Y with ESPN lines | B2B: ...`
 
+What appears on the game cards after load:
+
+- recent form
+- ESPN injuries
+- projected starters
+- sharp context placeholders or manual sharp inputs
+
 ### 7.4 If sportsbook lines need manual updates
 
 Use either:
 
-- inline row editing in the lines table
+- per-game `EDIT ODDS`
 - bulk paste import
 
 For bulk paste:
@@ -177,6 +200,7 @@ What it does:
 - parses pasted team blocks
 - matches them to loaded games
 - updates Money Line, spread, and total fields
+- marks affected game cards with an `EDITED` badge in the header
 
 ### 7.5 Adjust back-to-back flags if needed
 
@@ -199,7 +223,7 @@ Click:
 What it does:
 
 - runs `predictGame(...)` for every loaded matchup
-- fills the table with:
+- fills the game cards with:
   - projected scores
   - projected total
   - win probabilities
@@ -308,6 +332,30 @@ This is useful for:
 - checking baseline versus live imported stats
 - comparing ESPN odds against manual lines
 
+## 9. Schedule Card Layout
+
+Each loaded game now appears as a closed-by-default intelligence card.
+
+Closed card summary includes:
+
+- matchup and game metadata
+- sim summary after `RUN ALL SIMS`
+- sim breakdown
+- `EDITED` badge when manual odds are active
+
+Expanded card includes:
+
+- `MODEL & MARKET`
+- `TEAM COMPARISON`
+- `SHARP INFORMATION`
+
+`SHARP INFORMATION` currently contains:
+
+- `RECENT FORM`
+- `PROJECTED STARTERS`
+- `SHARP`
+- `INJURIES`
+
 ## 9. Full Workflow Pipeline Summary
 
 Use this sequence for most days:
@@ -375,7 +423,7 @@ Fixes:
 Symptoms:
 
 - bulk paste says it parsed too few teams
-- lines table does not update
+- game cards do not update
 
 Fixes:
 
@@ -504,3 +552,4 @@ First-time note:
 - The model can still run without BBRef imports, but then it uses baseline estimates instead of refreshed advanced stats.
 - Results grading works best when predictions and results are exported in the same workflow cycle.
 - `NBAModel.tsx` is now more of a coordinator than before, but it still has `// @ts-nocheck`, so typecheck passing does not yet mean the entire predictor shell is fully typed.
+

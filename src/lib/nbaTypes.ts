@@ -124,6 +124,103 @@ export type BettingAnalysis = {
   kellyOU: number
 }
 
+export type SharpLeanSide = 'home' | 'away' | 'over' | 'under' | 'none'
+
+export type SharpSignalInput = {
+  source: string
+  lastUpdated?: string
+  openingHomeMoneyline?: number | null
+  openingAwayMoneyline?: number | null
+  openingSpread?: number | null
+  openingTotal?: number | null
+  moneylineHomeBetsPct?: number | null
+  moneylineHomeMoneyPct?: number | null
+  spreadHomeBetsPct?: number | null
+  spreadHomeMoneyPct?: number | null
+  totalOverBetsPct?: number | null
+  totalOverMoneyPct?: number | null
+  clvLean?: SharpLeanSide
+  steamMoveLean?: SharpLeanSide
+  reverseLineMoveLean?: SharpLeanSide
+  consensusMoneyline?: 'home' | 'away' | 'none'
+  consensusSpread?: 'home' | 'away' | 'none'
+  consensusTotal?: 'over' | 'under' | 'none'
+  notes?: string
+}
+
+export type SharpSignalTag = {
+  label: string
+  aligned: boolean
+  detail: string
+}
+
+export type SharpMarketContext = {
+  source: string
+  lastUpdated?: string
+  homeMoneylineMove?: number | null
+  awayMoneylineMove?: number | null
+  spreadMove?: number | null
+  totalMove?: number | null
+  moneylineHomeSplitGap?: number | null
+  spreadHomeSplitGap?: number | null
+  totalOverSplitGap?: number | null
+  tags: SharpSignalTag[]
+}
+
+export type InjuryInfo = {
+  team: TeamAbbr
+  player: string
+  status: string
+  note: string
+  source?: string
+  lastUpdated?: string
+}
+
+export type StarterPosition = 'PG' | 'SG' | 'SF' | 'PF' | 'C'
+
+export type ProjectedStarter = {
+  position: StarterPosition
+  player: string
+}
+
+export type ProjectedStarterInfo = {
+  team: TeamAbbr
+  starters: ProjectedStarter[]
+  source?: string
+  lastUpdated?: string
+}
+
+export type RecentGameResult = {
+  date: string
+  opponent: TeamAbbr
+  venue: 'vs.' | 'at'
+  result: 'W' | 'L'
+  pointsFor: number
+  pointsAgainst: number
+}
+
+export type RecentFormSummary = {
+  team: TeamAbbr
+  games: RecentGameResult[]
+  wins: number
+  losses: number
+  avgMargin: number
+  streak: string
+  source?: string
+  lastUpdated?: string
+}
+
+export type CompositeRecommendation = {
+  primaryMarket: 'ML' | 'SPR' | 'O/U' | 'PASS'
+  pick: string
+  score: number
+  tier: 'A' | 'B' | 'C' | 'PASS'
+  pass: boolean
+  reasons: string[]
+  modelStrength: number
+  sharpStrength: number
+}
+
 export type TeamColors = {
   color: string
   altColor: string
@@ -145,6 +242,18 @@ export type ScheduleRow = {
   simResult: PredictionResult | null
   homeB2B: boolean
   awayB2B: boolean
+  sharpInput: SharpSignalInput | null
+  sharpContext: SharpMarketContext | null
+  injuries: InjuryInfo[]
+  projectedStarters: {
+    home: ProjectedStarterInfo | null
+    away: ProjectedStarterInfo | null
+  }
+  recentForm: {
+    home: RecentFormSummary | null
+    away: RecentFormSummary | null
+  }
+  compositeRecommendation: CompositeRecommendation | null
 }
 
 export type EditableOddsFields = {

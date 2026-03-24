@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { analyzeBetting, mlAmerican } from "./lib/betting";
 import { parseBulkOdds } from "./lib/bulkOddsParser";
+import { buildCompositeRecommendation, createCompositeFromSim, normalizeSharpSignals } from "./lib/compositeRecommendation";
 import { DIVISIONS, GAME_TYPES, TEAMS, parseBBRefCSV, predictGame } from "./lib/nbaModel";
-import { downloadCSV, fetchB2BTeams, fetchNBAColors, fetchTodaySchedule, parseOddsFromEvent } from "./lib/espn";
+import { downloadCSV, fetchB2BTeams, fetchNBAColors, fetchProjectedStarters, fetchRecentForm, fetchTeamInjuries, fetchTodaySchedule, parseOddsFromEvent } from "./lib/espn";
 import { usePredictorState } from "./hooks/usePredictorState";
 import { useResultsTracker } from "./hooks/useResultsTracker";
 import BBRefImportPanel from "./components/BBRefImportPanel";
@@ -16,6 +17,7 @@ import type {
   EditableOddsFields,
   ESPNTeamColorMap,
   LiveStatsMap,
+  OddsInput,
   ScheduleRow,
   TeamAbbr,
 } from "./lib/nbaTypes";
@@ -166,12 +168,42 @@ export default function NBAModel() {
       const rows = games.map(g => {
         let eo = null;
         for (const ev of rawEvents) { eo = parseOddsFromEvent(ev, g.homeAbbr, g.awayAbbr); if (eo) break; }
-        return { game:g, espnOdds:eo, editedOdds:eo?{...eo}:null, simResult:null, homeB2B:false, awayB2B:false };
+        return {
+          game:g,
+          espnOdds:eo,
+          editedOdds:eo?{...eo}:null,
+          simResult:null,
+          homeB2B:false,
+          awayB2B:false,
+          sharpInput:null,
+          sharpContext:normalizeSharpSignals(null, eo),
+          injuries:[],
+          projectedStarters:{ home:null, away:null },
+          recentForm:{ home:null, away:null },
+          compositeRecommendation:null,
+        };
       });
       setSchedStatus("Checking back-to-back games…");
       const allAbbrs = [...new Set(rows.flatMap(r => [r.game.homeAbbr, r.game.awayAbbr]))];
       const b2bSet   = await fetchB2BTeams(allAbbrs);
-      const withB2B  = b2bSet.size > 0 ? rows.map(r => ({ ...r, homeB2B:b2bSet.has(r.game.homeAbbr), awayB2B:b2bSet.has(r.game.awayAbbr) })) : rows;
+      setSchedStatus("Pulling recent form context...");
+      const recentFormMap = await fetchRecentForm(allAbbrs);
+      const injuryMap = await fetchTeamInjuries(allAbbrs, setSchedStatus);
+      const starterMap = await fetchProjectedStarters(allAbbrs, setSchedStatus);
+      const withB2B  = rows.map(r => ({
+        ...r,
+        homeB2B:b2bSet.has(r.game.homeAbbr),
+        awayB2B:b2bSet.has(r.game.awayAbbr),
+        injuries:[...(injuryMap[r.game.homeAbbr] ?? []), ...(injuryMap[r.game.awayAbbr] ?? [])],
+        projectedStarters:{
+          home:starterMap[r.game.homeAbbr] ?? null,
+          away:starterMap[r.game.awayAbbr] ?? null,
+        },
+        recentForm:{
+          home:recentFormMap[r.game.homeAbbr] ?? null,
+          away:recentFormMap[r.game.awayAbbr] ?? null,
+        },
+      }));
       setLinesRows(withB2B); setShowLines(true);
       setSchedStatus(`${games.length} games loaded · ${rows.filter(r=>r.espnOdds).length} with ESPN lines${b2bSet.size>0?` · B2B: ${[...b2bSet].join(", ")}`:" · No B2B detected"}`);
     } catch(e) { setSchedStatus("Error: " + getErrorMessage(e)); }
@@ -181,7 +213,11 @@ export default function NBAModel() {
   const handleRunAllSims = () => {
     setSimsRunning(true);
     setTimeout(() => {
-      setLinesRows(prev => prev.map(r => ({ ...r, simResult: predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:"Regular Season", homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats }) })));
+      setLinesRows(prev => prev.map(r => {
+        const simResult = predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:"Regular Season", homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats });
+        const analysis = r.editedOdds && r.editedOdds.homeMoneyline !== 0 ? analyzeBetting(simResult, r.editedOdds) : null;
+        return createCompositeFromSim(r, simResult, analysis);
+      }));
       setSimsRunning(false); setSchedStatus("All simulations complete — ready to export");
     }, 80);
   };
@@ -256,7 +292,7 @@ export default function NBAModel() {
           };
         }
         matched++;
-        return { ...row, editedOdds: odds, simResult: null };
+        return { ...row, editedOdds: odds, simResult: null, sharpContext: normalizeSharpSignals(row.sharpInput, odds), compositeRecommendation: null };
       });
       setLinesRows(next);
       if (matched === 0) {
@@ -281,8 +317,8 @@ export default function NBAModel() {
       "Spread Rec","Spread Edge","H Net Rtg","A Net Rtg","H eFG%","A eFG%","H TOV%","A TOV%",
       // Y–Z: edge/kelly
       "ML Edge%","ML Kelly","SPR Edge%","SPR Kelly","OU Edge%","OU Kelly",
-      // AA–AB: source
-      "Stats Source","Odds Source",
+      "Composite Market","Composite Pick","Composite Score","Composite Tier","Composite Reasons",
+      "Stats Source","Odds Source","Sharp Source","Sharp Updated","Injury Updated",
       // AC–AJ: lookup + results (filled by spreadsheet XLOOKUP)
       "LookupKey",
     ];
@@ -290,6 +326,8 @@ export default function NBAModel() {
       const sim = r.simResult ?? predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:"Regular Season", homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats });
       const od  = r.editedOdds;
       const ba  = od && od.homeMoneyline !== 0 ? analyzeBetting(sim, od) : null;
+      const sharpContext = normalizeSharpSignals(r.sharpInput, od);
+      const composite = r.compositeRecommendation ?? buildCompositeRecommendation({ ...r, simResult:sim, sharpContext }, ba);
       const h   = liveStats[r.game.homeAbbr] ? { ...TEAMS[r.game.homeAbbr], ...liveStats[r.game.homeAbbr] } : TEAMS[r.game.homeAbbr];
       const a   = liveStats[r.game.awayAbbr] ? { ...TEAMS[r.game.awayAbbr], ...liveStats[r.game.awayAbbr] } : TEAMS[r.game.awayAbbr];
       const mlRec = !ba || ba.mlValueSide === "none"
@@ -332,8 +370,16 @@ export default function NBAModel() {
         ba&&ba.ouRec!=="pass"?"+"+ba.ouEdgePct.toFixed(1)+"%":"—",
         ba&&ba.ouRec!=="pass"?ba.kellyOU.toFixed(4):"—",
         // AA–AB: source
+        composite.primaryMarket,
+        composite.pick,
+        String(composite.score),
+        composite.tier,
+        composite.reasons.join(" | "),
         hasLive?"BBRef live":"Estimates",
         od?(od.source==="espn"?"ESPN":"Manual"):"No odds",
+        r.sharpInput?.source ?? "None",
+        r.sharpInput?.lastUpdated ?? "-",
+        r.injuries[0]?.lastUpdated ?? "-",
           // AC: lookup key
         lookupKey,
       ];
@@ -586,3 +632,5 @@ export default function NBAModel() {
     </div>
   );
 }
+
+

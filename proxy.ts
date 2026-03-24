@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express'
 import fetch from 'node-fetch'
 
 const app = express()
+const PORT = Number(process.env.PORT || 3002)
 
 type ScoreboardQuery = { dates?: string | string[] }
 type ProxyQuery = { url?: string | string[] }
@@ -21,6 +22,15 @@ const ESPN_HEADERS = {
   Referer: 'https://www.espn.com/',
   Origin: 'https://www.espn.com',
   Accept: 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Cache-Control': 'no-cache',
+}
+
+const ESPN_HTML_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  Referer: 'https://www.espn.com/',
+  Origin: 'https://www.espn.com',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
   'Cache-Control': 'no-cache',
 }
@@ -65,8 +75,9 @@ app.get('/proxy', async (req: Request<Record<string, never>, unknown, unknown, P
   }
 
   const isEspn = url.includes('espn.com')
+  const isEspnApi = url.includes('site.api.espn.com')
   const headers = isEspn
-    ? ESPN_HEADERS
+    ? (isEspnApi ? ESPN_HEADERS : ESPN_HTML_HEADERS)
     : {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: 'application/json, text/plain, */*',
@@ -85,8 +96,15 @@ app.get('/proxy', async (req: Request<Record<string, never>, unknown, unknown, P
         .json({ error: `Upstream returned ${upstream.status}`, url, body: body.slice(0, 300) })
     }
 
-    const data = await upstream.json()
-    res.json(data)
+    const contentType = upstream.headers.get('content-type') ?? ''
+    const body = await upstream.text()
+
+    if (contentType.includes('application/json')) {
+      res.type('application/json').send(body)
+      return
+    }
+
+    res.type(contentType || 'text/plain').send(body)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown proxy error'
     console.error('[proxy] error:', message)
@@ -94,8 +112,8 @@ app.get('/proxy', async (req: Request<Record<string, never>, unknown, unknown, P
   }
 })
 
-app.listen(3001, () => {
-  console.log('Proxy running on http://localhost:3001')
+app.listen(PORT, () => {
+  console.log(`Proxy running on http://localhost:${PORT}`)
   console.log("  /espn/scoreboard -> today's games")
   console.log('  /espn/scoreboard?dates=YYYYMMDD -> historical scores')
   console.log('  /espn/teams -> team colors')

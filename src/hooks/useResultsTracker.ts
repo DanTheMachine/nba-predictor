@@ -9,6 +9,7 @@ import {
   summarizeTrackedPredictions,
 } from "../lib/resultsTracker";
 import { downloadCSV } from "../lib/espn";
+import { PROXY_URL } from "../lib/proxyConfig";
 import type { GradedPredictionRow, PredictionLogEntry, ResultLogEntry, TeamAbbr, TrackerStats } from "../lib/nbaTypes";
 
 function getErrorMessage(error: unknown): string {
@@ -61,7 +62,7 @@ export function useResultsTracker(): UseResultsTrackerReturn {
       const pad = (n: number) => String(n).padStart(2, "0");
       const dateStr = `${yest.getFullYear()}${pad(yest.getMonth() + 1)}${pad(yest.getDate())}`;
       const isoDate = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
-      const res = await fetch(`http://localhost:3001/proxy?url=${encodeURIComponent(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`)}`);
+      const res = await fetch(`${PROXY_URL}${encodeURIComponent(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`)}`);
       const data = await res.json();
       const events = data?.events ?? [];
       const rows: Array<{
@@ -117,7 +118,7 @@ export function useResultsTracker(): UseResultsTrackerReturn {
         });
       }
     } catch (error) {
-      setResultsError(`ESPN fetch failed â€” ensure proxy is running on :3001. ${getErrorMessage(error)}`);
+      setResultsError(`ESPN fetch failed â€” ensure proxy is running on :3002. ${getErrorMessage(error)}`);
     }
     setFetchingResults(false);
   };
@@ -183,3 +184,4 @@ export function useResultsTracker(): UseResultsTrackerReturn {
     stats,
   };
 }
+

@@ -74,4 +74,41 @@ U 217Â½
   it('throws a helpful error when the paste does not include recognizable team names', () => {
     expect(() => parseBulkOdds('not a sportsbook block')).toThrow(/Could not find team names/)
   })
+
+  it('accepts sportsbook city aliases like LA LAKERS and city-only labels', () => {
+    const raw = `
+LA LAKERS
+534
+- 2
+- 105
+O 227
+Even
+- 115
+DETROIT
+533
++ 2
+- 105
+U 227
+- 110
++ 105
+`
+
+    expect(parseBulkOdds(raw)).toEqual([
+      {
+        awayAbbr: 'LAL',
+        homeAbbr: 'DET',
+        odds: {
+          source: 'manual',
+          awayMoneyline: -115,
+          homeMoneyline: 105,
+          spread: 2,
+          spreadAwayOdds: -105,
+          spreadHomeOdds: -105,
+          overUnder: 227,
+          overOdds: 100,
+          underOdds: -110,
+        },
+      },
+    ])
+  })
 })

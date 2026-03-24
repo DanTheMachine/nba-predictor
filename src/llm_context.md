@@ -7,6 +7,7 @@
 - The large `NBAModel_29` file was renamed to `NBAModel.tsx`.
 - `src/NBAModel.tsx` still has a temporary `// @ts-nocheck` and is not fully typed yet.
 - The main schedule workflow has been extracted, but `NBAModel.tsx` is still a coordinator with broad state and handler props.
+- The main schedule UX is now driven by expandable game intelligence cards rather than the old best-bets-first layout.
 
 ## Refactors Completed
 
@@ -77,10 +78,74 @@
 - `ScheduleAnalysis.tsx` now owns:
   - schedule controls
   - bulk odds import UI
-  - editable lines table
-  - per-game simulation analysis cards
-  - best-bets summary panel
+  - expandable game intelligence cards
+  - ranked summary panel
+  - manual sharp / injury editing
 - `NBAModel.tsx` now acts more like a coordinator and passes state/handlers into `ScheduleAnalysis`.
+
+## Game Intelligence Card Status
+
+- The schedule area now renders closed-by-default cards for each loaded game.
+- The expanded card currently includes:
+  - `MODEL & MARKET`
+  - `TEAM COMPARISON`
+  - `SHARP INFORMATION`
+- `MODEL & MARKET` currently shows:
+  - Vegas and manual line rows
+  - projected score / total
+  - ML, total, and spread edge breakdowns
+- `TEAM COMPARISON` currently shows:
+  - net rating edge
+  - pace
+  - eFG
+  - TOV
+  - ORB%
+  - 3PAr
+  - AST%
+  - B2B
+- `SHARP INFORMATION` currently shows:
+  - `RECENT FORM` on the left
+  - `PROJECTED STARTERS` on the right
+  - `SHARP` below recent form
+  - `INJURIES` below projected starters
+  - inline italic freshness timestamps for recent form, projected starters, sharp context, and injuries
+- Projected starters now:
+  - load from ESPN depth chart pages during `LOAD GAMES`
+  - render inside `SHARP INFORMATION`
+  - append matching injury designations in red when a projected starter is also listed in the injury feed
+- Manually edited odds now show an `EDITED` badge on the game card header.
+- Composite recommendation types and export fields exist, but the current UI is intentionally still simulation-first rather than final-recommendation-first.
+
+## ESPN Context Fetching Status
+
+- `src/lib/espn.ts` now owns:
+  - today schedule fetch
+  - ESPN color fetch
+  - recent form fetch
+  - B2B lookup
+  - roster-based ESPN injury fetch
+  - projected starters fetch from ESPN depth chart HTML
+- `LOAD GAMES` now performs:
+  1. today's schedule fetch
+  2. odds parsing
+  3. back-to-back detection
+  4. recent form fetch
+  5. ESPN injury fetch
+  6. ESPN projected starters fetch
+  7. schedule row assembly
+- Recent form now includes:
+  - date
+  - opponent
+  - home/away indicator
+  - result
+  - score
+  - source and timestamp
+- Injury data now includes:
+  - player
+  - status
+  - source
+  - timestamp
+- Manual injury editing now preserves ESPN-fetched injury items instead of overwriting them.
 
 ## Results Tracker Refactor Status
 
@@ -123,6 +188,7 @@
   - standard two-team sportsbook blocks
   - `EVEN`
   - fractional glyph variants like `½`
+  - sportsbook alias names such as `LA LAKERS`, `LA CLIPPERS`, and city-only paste variants
 
 ## Testing And CI
 
@@ -135,9 +201,11 @@
 - Current test coverage includes:
   - betting math unit tests in `src/lib/betting.test.ts`
   - bulk odds parser unit tests in `src/lib/bulkOddsParser.test.ts`
+  - ESPN injury normalization and projected starter parser tests in `src/lib/espn.test.ts`
   - predictor hook tests in `src/hooks/usePredictorState.test.ts`
   - results tracker hook tests in `src/hooks/useResultsTracker.test.ts`
   - single-game results component tests in `src/components/SingleGameResults.test.tsx`
+  - schedule card UI tests in `src/components/ScheduleAnalysis.test.tsx`
   - evaluator parser/grading unit tests in `src/lib/modelEvaluation.test.ts`
   - evaluator component tests in `src/components/ModelEvaluation.test.tsx`
   - export contract test in `src/NBAModel.test.tsx`
@@ -155,6 +223,8 @@
 - We improved the prediction formula, but it has not yet been backtested against historical NBA results. The next serious model-quality step is calibration against real game outcomes and/or closing lines.
 - `src/NBAModel.tsx` still has `// @ts-nocheck`, but much of the predictor/results UI and workflow logic has already been pushed into hooks/components/helpers.
 - `npm run typecheck` is currently passing after the latest extractions.
+- `ScheduleAnalysis.tsx` is currently the most actively iterated UX surface and now carries most of the game-card presentation logic.
+- Composite recommendation infrastructure exists, but the user-facing workflow still prioritizes sim results and market breakdowns while the final recommendation UX is being shaped.
 - The latest focused test run for:
   - `src/hooks/usePredictorState.test.ts`
   - `src/hooks/useResultsTracker.test.ts`
