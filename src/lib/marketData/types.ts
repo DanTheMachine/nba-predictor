@@ -87,5 +87,6 @@ export type MarketDataProviderDefinition = {
 
 export interface MarketDataClient {
   provider: MarketDataProviderDefinition
-  fetchGames(request: MarketDataRequest): Promise<MarketDataFetchResult>
+  // eslint-disable-next-line no-unused-vars
+  fetchGames: (...args: [MarketDataRequest]) => Promise<MarketDataFetchResult>
 }

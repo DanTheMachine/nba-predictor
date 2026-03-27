@@ -32,7 +32,7 @@ class StubMarketDataClient implements MarketDataClient {
     this.provider = MARKET_DATA_PROVIDERS[provider]
   }
 
-  async fetchGames(_request: MarketDataRequest): Promise<MarketDataFetchResult> {
+  async fetchGames(): Promise<MarketDataFetchResult> {
     if (this.provider.id === 'none') {
       return buildEmptyResult('none', 'unsupported', ['No market data provider selected'])
     }

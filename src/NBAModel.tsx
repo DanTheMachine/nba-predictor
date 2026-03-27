@@ -237,15 +237,15 @@ export default function NBAModel() {
       const liveMarketCount = rowsWithMarketData.filter((row) => row.marketData?.current).length;
       const marketStatusSuffix =
         marketDataResult.status === "available"
-          ? ` Â· ${liveMarketCount} with ${marketDataResult.sourceLabel} market snapshots`
+          ? ` ? ${liveMarketCount} with ${marketDataResult.sourceLabel} market snapshots`
           : marketDataResult.status === "not_configured"
-            ? ` Â· ${marketDataResult.sourceLabel} not configured`
+            ? ` ? ${marketDataResult.sourceLabel} not configured`
             : marketDataResult.status === "unsupported"
-              ? ` Â· ${marketDataResult.sourceLabel} unavailable`
+              ? ` ? ${marketDataResult.sourceLabel} unavailable`
               : marketDataResult.errors?.[0]
-                ? ` Â· Market data warning: ${marketDataResult.errors[0]}`
+                ? ` ? Market data warning: ${marketDataResult.errors[0]}`
                 : "";
-      setSchedStatus(`${games.length} games loaded · ${rows.filter(r=>r.espnOdds).length} with ESPN lines${b2bSet.size>0?` · B2B: ${[...b2bSet].join(", ")}`:" · No B2B detected"}`);
+      setSchedStatus(`${games.length} games loaded ? ${rows.filter(r=>r.espnOdds).length} with ESPN lines${b2bSet.size>0?` ? B2B: ${[...b2bSet].join(", ")}`:" ? No B2B detected"}${marketStatusSuffix}`);
     } catch(e) { setSchedStatus("Error: " + getErrorMessage(e)); }
     setSchedLoading(false);
   };

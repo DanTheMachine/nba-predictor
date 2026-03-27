@@ -2,13 +2,6 @@ import { americanToImplied } from './betting'
 import type { OddsInput, SharpLeanSide, SharpLeanValue, SharpSignalInput } from './nbaTypes'
 import type { MarketDataBookSnapshot, MarketDataGameSnapshot } from './marketData'
 
-function mean(values: Array<number | null | undefined>, digits = 0): number | null {
-  const filtered = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
-  if (!filtered.length) return null
-  const average = filtered.reduce((sum, value) => sum + value, 0) / filtered.length
-  return digits > 0 ? Number(average.toFixed(digits)) : Math.round(average)
-}
-
 function pushLean(target: SharpLeanSide[], value: SharpLeanSide | null): void {
   if (!value || value === 'none' || target.includes(value)) return
   target.push(value)

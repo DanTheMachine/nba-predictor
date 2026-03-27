@@ -316,16 +316,6 @@ function formatTotalLabel(total: number): string {
   return `O/U ${total}`
 }
 
-function formatHeaderLineSummary(row: ScheduleRow, odds: OddsInput | null | undefined): string {
-  if (!odds) return "No odds loaded"
-
-  return [
-    `ML ${formatMoneylinePair(row.game.homeAbbr, row.game.awayAbbr, odds.homeMoneyline, odds.awayMoneyline)}`,
-    `SPR ${formatSpreadPair(row.game.homeAbbr, row.game.awayAbbr, odds.spread)} (${formatSignedOdds(odds.spreadHomeOdds)} / ${formatSignedOdds(odds.spreadAwayOdds)})`,
-    `TOT ${formatTotalLabel(odds.overUnder)} (${formatSignedOdds(odds.overOdds)} / ${formatSignedOdds(odds.underOdds)})`,
-  ].join(" | ")
-}
-
 function formatCompactHeaderOddsSummary(row: ScheduleRow, odds: OddsInput | null | undefined): string {
   if (!odds) return "No odds loaded"
 
