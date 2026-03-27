@@ -2,16 +2,19 @@ import type { CSSProperties, Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 import type { UseResultsTrackerReturn } from "../hooks/useResultsTracker";
 import { buildCompositeRecommendation, createCompositeFromSim, normalizeSharpSignals } from "../lib/compositeRecommendation";
+import { deriveSharpInputFromMarketData } from "../lib/sharpSignals";
 import type { analyzeBetting as AnalyzeBettingFn, mlAmerican as MlAmericanFn } from "../lib/betting";
 import type { predictGame as PredictGameFn } from "../lib/nbaModel";
 import type {
+  BettingAnalysis,
   EditableOddsFields,
   InjuryInfo,
   LiveStatsMap,
+  OddsInput,
+  ProjectedStarter,
   ScheduleRow,
   SharpLeanSide,
   SharpLeanValue,
-  SharpSignalInput,
   TeamAbbr,
   TeamStats,
 } from "../lib/nbaTypes";
@@ -187,7 +190,7 @@ function sampleLean(index: number, cycle: readonly SharpLeanSide[]): SharpLeanSi
   return cycle[index % cycle.length] ?? "none"
 }
 
-function buildSampleSharpInput(row: ScheduleRow, index: number): SharpSignalInput | null {
+function buildSampleSharpInput(row: ScheduleRow, index: number) {
   if (!row.editedOdds) return null
 
   const moneylineLean: "home" | "away" = index % 2 === 0 ? "home" : "away"
@@ -207,9 +210,9 @@ function buildSampleSharpInput(row: ScheduleRow, index: number): SharpSignalInpu
     spreadHomeMoneyPct: spreadLean === "home" ? 61 : 46,
     totalOverBetsPct: totalLean === "over" ? 68 : 43,
     totalOverMoneyPct: totalLean === "over" ? 52 : 61,
-      clvLean: [sampleLean(index, [moneylineLean, "none"]), sampleLean(index + 1, [totalLean, "none"])].filter((value) => value !== "none"),
-      steamMoveLean: [sampleLean(index + 1, [totalLean, "none"]), sampleLean(index + 2, [spreadLean, "none"])].filter((value) => value !== "none"),
-      reverseLineMoveLean: [sampleLean(index + 2, [spreadLean, "none"]), sampleLean(index + 3, [totalLean, "none"])].filter((value) => value !== "none"),
+    clvLean: [sampleLean(index, [moneylineLean, "none"]), sampleLean(index + 1, [totalLean, "none"])].filter((value) => value !== "none"),
+    steamMoveLean: [sampleLean(index + 1, [totalLean, "none"]), sampleLean(index + 2, [spreadLean, "none"])].filter((value) => value !== "none"),
+    reverseLineMoveLean: [sampleLean(index + 2, [spreadLean, "none"]), sampleLean(index + 3, [totalLean, "none"])].filter((value) => value !== "none"),
     consensusMoneyline: moneylineLean,
     consensusSpread: spreadLean,
     consensusTotal: totalLean,
@@ -233,6 +236,19 @@ function starterInjuryTag(starterName: string, team: TeamAbbr, allInjuries: Inju
   const match = allInjuries.find((injury) => injury.team === team && normalizePlayerKey(injury.player) === starterKey)
   if (!match) return null
   return match.status?.trim() || "Injury"
+}
+
+function formatStarterStats(starter: ProjectedStarter): string | null {
+  const pts = starter.stats?.pts
+  if (pts == null) return null
+
+  if (starter.position === "PG" || starter.position === "SG") {
+    const ast = starter.stats?.ast
+    return ast != null ? `${pts.toFixed(1)} PPG ${ast.toFixed(1)} APG` : `${pts.toFixed(1)} PPG`
+  }
+
+  const reb = starter.stats?.reb
+  return reb != null ? `${pts.toFixed(1)} PPG ${reb.toFixed(1)} RPG` : `${pts.toFixed(1)} PPG`
 }
 
 function toContext(row: ScheduleRow): ContextFields {
@@ -274,6 +290,12 @@ function formatSignedOdds(value: number): string {
   return `${value > 0 ? "+" : ""}${value}`
 }
 
+function formatDisplayMoneyline(value: number): string {
+  if (value === 0) return "+100"
+  if (value === 100) return "+100"
+  return `${value > 0 ? "+" : ""}${value}`
+}
+
 function formatMoneylinePair(homeAbbr: TeamAbbr, awayAbbr: TeamAbbr, homeMoneyline: number, awayMoneyline: number): string {
   return `${awayAbbr} ${formatSignedOdds(awayMoneyline)} / ${homeAbbr} ${formatSignedOdds(homeMoneyline)}`
 }
@@ -294,9 +316,64 @@ function formatTotalLabel(total: number): string {
   return `O/U ${total}`
 }
 
-function inferMarketRead(row: ScheduleRow): string {
+function formatHeaderLineSummary(row: ScheduleRow, odds: OddsInput | null | undefined): string {
+  if (!odds) return "No odds loaded"
+
+  return [
+    `ML ${formatMoneylinePair(row.game.homeAbbr, row.game.awayAbbr, odds.homeMoneyline, odds.awayMoneyline)}`,
+    `SPR ${formatSpreadPair(row.game.homeAbbr, row.game.awayAbbr, odds.spread)} (${formatSignedOdds(odds.spreadHomeOdds)} / ${formatSignedOdds(odds.spreadAwayOdds)})`,
+    `TOT ${formatTotalLabel(odds.overUnder)} (${formatSignedOdds(odds.overOdds)} / ${formatSignedOdds(odds.underOdds)})`,
+  ].join(" | ")
+}
+
+function formatCompactHeaderOddsSummary(row: ScheduleRow, odds: OddsInput | null | undefined): string {
+  if (!odds) return "No odds loaded"
+
+  return [
+    `${row.game.awayAbbr} ${formatDisplayMoneyline(odds.awayMoneyline)} / ${row.game.homeAbbr} ${formatDisplayMoneyline(odds.homeMoneyline)}`,
+    `${row.game.awayAbbr} ${awaySpreadFromHomeSpread(odds.spread) > 0 ? "+" : ""}${awaySpreadFromHomeSpread(odds.spread)} ${formatSignedOdds(odds.spreadAwayOdds)} / ${row.game.homeAbbr} ${odds.spread > 0 ? "+" : ""}${odds.spread} ${formatSignedOdds(odds.spreadHomeOdds)}`,
+    `${formatTotalLabel(odds.overUnder)} (${formatSignedOdds(odds.overOdds)} / ${formatSignedOdds(odds.underOdds)})`,
+  ].join(" | ")
+}
+
+function sameOdds(a: OddsInput | null | undefined, b: OddsInput | null | undefined): boolean {
+  if (!a || !b) return false
+  return (
+    a.homeMoneyline === b.homeMoneyline &&
+    a.awayMoneyline === b.awayMoneyline &&
+    a.spread === b.spread &&
+    a.spreadHomeOdds === b.spreadHomeOdds &&
+    a.spreadAwayOdds === b.spreadAwayOdds &&
+    a.overUnder === b.overUnder &&
+    a.overOdds === b.overOdds &&
+    a.underOdds === b.underOdds
+  )
+}
+
+function statusTone(status: string, hasRows: boolean): string {
+  const normalized = status.toLowerCase()
+  if (
+    normalized.includes("error") ||
+    normalized.includes("failed") ||
+    normalized.includes("warning") ||
+    normalized.includes("warn")
+  ) {
+    return "#f87171"
+  }
+
+  return hasRows ? "#3fb950" : "#5a4a2a"
+}
+
+type MarketSignalScore = {
+  key: "home" | "away" | "over" | "under"
+  label: string
+  score: number
+  evidence: number
+}
+
+function buildMarketSignalScores(row: ScheduleRow): MarketSignalScore[] {
   const sharp = row.sharpContext
-  if (!sharp) return "No market signal yet"
+  if (!sharp) return []
 
   const homeSupport =
     (sharp.homeMoneylineMove != null && sharp.homeMoneylineMove > 0 ? 1 : 0) +
@@ -330,16 +407,112 @@ function inferMarketRead(row: ScheduleRow): string {
     (hasLean(row.sharpInput?.steamMoveLean, "under") ? 1 : 0) +
     (hasLean(row.sharpInput?.reverseLineMoveLean, "under") ? 1 : 0)
 
-  const reads = [
-    { label: `${row.game.homeAbbr} support`, score: homeSupport },
-    { label: `${row.game.awayAbbr} support`, score: awaySupport },
-    { label: "OVER support", score: overSupport },
-    { label: "UNDER support", score: underSupport },
-  ].sort((a, b) => b.score - a.score)
+  const scores = [
+    { key: "home", label: `${row.game.homeAbbr} ML`, score: homeSupport, evidence: homeSupport },
+    { key: "away", label: `${row.game.awayAbbr} ML`, score: awaySupport, evidence: awaySupport },
+    { key: "over", label: "OVER", score: overSupport, evidence: overSupport },
+    { key: "under", label: "UNDER", score: underSupport, evidence: underSupport },
+  ] satisfies MarketSignalScore[]
+
+  return scores.sort((a, b) => b.score - a.score)
+}
+
+function inferMarketRead(row: ScheduleRow): string {
+  const reads = buildMarketSignalScores(row)
+  if (!reads.length) return "No market signal yet"
 
   if (!reads[0] || reads[0].score <= 0) return "Mixed market signals"
   if (reads[1] && reads[0].score === reads[1].score) return "Mixed market signals"
-  return `Market read: ${reads[0].label}`
+  const top = reads[0]
+  if (top.key === "home" || top.key === "away") return `Market read: ${top.label.replace(" ML", "")} support`
+  return `Market read: ${top.label} support`
+}
+
+function supportTone(score: number): string {
+  if (score >= 4) return "#3fb950"
+  if (score >= 2) return "#fbbf24"
+  if (score >= 1) return "#60a5fa"
+  return "#7a6a3a"
+}
+
+function supportBackground(score: number): string {
+  if (score >= 4) return "rgba(63,185,80,0.08)"
+  if (score >= 2) return "rgba(251,191,36,0.08)"
+  if (score >= 1) return "rgba(96,165,250,0.08)"
+  return "rgba(255,200,80,0.03)"
+}
+
+function supportBorder(score: number): string {
+  if (score >= 4) return "rgba(63,185,80,0.2)"
+  if (score >= 2) return "rgba(251,191,36,0.2)"
+  if (score >= 1) return "rgba(96,165,250,0.2)"
+  return "rgba(255,200,80,0.08)"
+}
+
+function sharpStatusLabel(row: ScheduleRow): string {
+  if (row.sharpInput?.source === "manual") return "MANUAL SHARP"
+  if (row.sharpInput?.source) return `${row.sharpInput.source.toUpperCase()} SHARP`
+  if (row.marketData?.current) return "LIVE MARKET READY"
+  if (row.marketData) return "MARKET LINKED"
+  return "NO SHARP"
+}
+
+function sharpStatusTone(row: ScheduleRow): { color: string; border: string; background: string } {
+  if (row.sharpInput?.source === "manual") {
+    return {
+      color: "#fbbf24",
+      border: "rgba(251,191,36,0.28)",
+      background: "rgba(251,191,36,0.08)",
+    }
+  }
+  if (row.sharpInput?.source) {
+    return {
+      color: "#93c5fd",
+      border: "rgba(96,165,250,0.28)",
+      background: "rgba(96,165,250,0.08)",
+    }
+  }
+  if (row.marketData?.current) {
+    return {
+      color: "#bfdbfe",
+      border: "rgba(96,165,250,0.22)",
+      background: "rgba(96,165,250,0.05)",
+    }
+  }
+  return {
+    color: "#7a6a3a",
+    border: "rgba(255,200,80,0.12)",
+    background: "rgba(255,200,80,0.03)",
+  }
+}
+
+function modelSideForSignal(
+  signal: MarketSignalScore,
+  row: ScheduleRow,
+  analysis: BettingAnalysis | null,
+): string | null {
+  if (!analysis) return null
+  if (signal.key === "home" || signal.key === "away") {
+    return analysis.mlValueSide === signal.key ? `${signal.label} edge` : analysis.mlValueSide !== "none" ? `${analysis.mlValueSide === "home" ? row.game.homeAbbr : row.game.awayAbbr} ML edge` : "No ML edge"
+  }
+  return analysis.ouRec === signal.key ? `${signal.label} edge` : analysis.ouRec !== "pass" ? `${analysis.ouRec.toUpperCase()} edge` : "No total edge"
+}
+
+function modelAgreementLabel(
+  signal: MarketSignalScore,
+  row: ScheduleRow,
+  analysis: BettingAnalysis | null,
+): string {
+  const modelSide = modelSideForSignal(signal, row, analysis)
+  if (!modelSide) return "Model pending"
+  if (
+    (signal.key === "home" || signal.key === "away")
+      ? analysis?.mlValueSide === signal.key
+      : analysis?.ouRec === signal.key
+  ) {
+    return `Model agrees: ${modelSide}`
+  }
+  return `Model differs: ${modelSide}`
 }
 
 function edgeTone(edge: number | null, passes: boolean): string {
@@ -416,6 +589,22 @@ export default function ScheduleAnalysis({
 
   const hasSimResults = enrichedRows.some((entry) => entry.row.simResult)
   const hasEditableOdds = linesRows.some((row) => row.editedOdds)
+  const hasLiveSharpSource = linesRows.some((row) => row.marketData && row.editedOdds)
+  const liveSharpCount = linesRows.filter((row) => row.sharpInput?.source && row.sharpInput.source !== "manual").length
+  const manualSharpCount = linesRows.filter((row) => row.sharpInput?.source === "manual").length
+  const marketReadyCount = linesRows.filter((row) => row.marketData?.current).length
+
+  const refreshLiveSharp = (): void => {
+    setLinesRows((prev) => prev.map((currentRow) => {
+      const sharpInput = deriveSharpInputFromMarketData(currentRow.marketData, currentRow.editedOdds)
+      if (!sharpInput) return currentRow
+
+      const sharpContext = normalizeSharpSignals(sharpInput, currentRow.editedOdds)
+      const analysis = currentRow.editedOdds && currentRow.simResult ? analyzeBetting(currentRow.simResult, currentRow.editedOdds) : null
+      const nextRow = { ...currentRow, sharpInput, sharpContext }
+      return { ...nextRow, compositeRecommendation: buildCompositeRecommendation(nextRow, analysis) }
+    }))
+  }
 
   const loadSampleSharp = (): void => {
     setLinesRows((prev) => prev.map((currentRow, rowIndex) => {
@@ -480,10 +669,24 @@ export default function ScheduleAnalysis({
         <div>
           <div style={{ fontSize:10, fontWeight:700, color:"#5a4a2a", letterSpacing:3, marginBottom:3 }}>TODAY&apos;S GAMES & EXPORT</div>
           <div style={{ fontSize:11, color:"#3a2a1a" }}>Game intelligence cards combine model output, sharp context, injuries, and recent form.</div>
+          {linesRows.length > 0 && (
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:7 }}>
+              <div style={{ fontSize:8, color:"#93c5fd", border:"1px solid rgba(96,165,250,0.2)", background:"rgba(96,165,250,0.05)", borderRadius:999, padding:"3px 8px", letterSpacing:1 }}>
+                LIVE SHARP {liveSharpCount}/{linesRows.length}
+              </div>
+              <div style={{ fontSize:8, color:"#bfdbfe", border:"1px solid rgba(96,165,250,0.16)", background:"rgba(96,165,250,0.04)", borderRadius:999, padding:"3px 8px", letterSpacing:1 }}>
+                MARKET READY {marketReadyCount}/{linesRows.length}
+              </div>
+              <div style={{ fontSize:8, color:"#fbbf24", border:"1px solid rgba(251,191,36,0.16)", background:"rgba(251,191,36,0.05)", borderRadius:999, padding:"3px 8px", letterSpacing:1 }}>
+                MANUAL SHARP {manualSharpCount}
+              </div>
+            </div>
+          )}
         </div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
           <button onClick={handleLoadSchedule} disabled={schedLoading} style={{ background:schedLoading ? "#0f0800" : "#b45309", border:"none", borderRadius:5, padding:"8px 14px", color:schedLoading ? "#3a2a1a" : "#fef3c7", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:schedLoading ? "not-allowed" : "pointer" }}>{schedLoading ? "LOADING..." : linesRows.length ? "RELOAD" : "LOAD GAMES"}</button>
-          {linesRows.length > 0 && <button onClick={loadSampleSharp} disabled={!hasEditableOdds} style={{ background:hasEditableOdds ? "rgba(59,130,246,0.12)" : "rgba(59,130,246,0.04)", border:"1px solid rgba(59,130,246,0.24)", borderRadius:5, padding:"8px 14px", color:hasEditableOdds ? "#bfdbfe" : "#5a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasEditableOdds ? "pointer" : "not-allowed" }}>LOAD SAMPLE SHARP</button>}
+          {linesRows.length > 0 && <button onClick={refreshLiveSharp} disabled={!hasLiveSharpSource} style={{ background:hasLiveSharpSource ? "rgba(59,130,246,0.12)" : "rgba(59,130,246,0.04)", border:"1px solid rgba(59,130,246,0.24)", borderRadius:5, padding:"8px 14px", color:hasLiveSharpSource ? "#bfdbfe" : "#5a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasLiveSharpSource ? "pointer" : "not-allowed" }}>REFRESH LIVE SHARP</button>}
+          {linesRows.length > 0 && <button onClick={loadSampleSharp} disabled={!hasEditableOdds} style={{ background:hasEditableOdds ? "rgba(251,191,36,0.12)" : "rgba(251,191,36,0.04)", border:"1px solid rgba(251,191,36,0.24)", borderRadius:5, padding:"8px 14px", color:hasEditableOdds ? "#fde68a" : "#7a6a3a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasEditableOdds ? "pointer" : "not-allowed" }}>LOAD SAMPLE SHARP</button>}
           {linesRows.length > 0 && <button onClick={() => setShowBulkImport((prev) => !prev)} style={{ background:showBulkImport ? "rgba(251,191,36,0.12)" : "rgba(255,200,80,0.06)", border:"1px solid rgba(255,200,80,0.2)", borderRadius:5, padding:"8px 14px", color:showBulkImport ? "#fbbf24" : "#9a8a5a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>{showBulkImport ? "HIDE" : "BULK EDIT LINES"}</button>}
           {linesRows.length > 0 && <button onClick={handleRunAllSims} disabled={simsRunning} style={{ background:simsRunning ? "#0f0800" : "#d29922", border:"none", borderRadius:5, padding:"8px 14px", color:simsRunning ? "#3a2a1a" : "#1a0f00", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:simsRunning ? "not-allowed" : "pointer" }}>{simsRunning ? "RUNNING..." : "RUN ALL SIMS"}</button>}
           {hasSimResults && <button onClick={handleExport} style={{ background:"#3fb950", border:"none", borderRadius:5, padding:"8px 14px", color:"#0d1117", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>PREDICTIONS CSV</button>}
@@ -504,7 +707,7 @@ export default function ScheduleAnalysis({
         </div>
       )}
 
-      {schedStatus && <div style={{ fontSize:11, color:linesRows.length > 0 ? "#3fb950" : "#5a4a2a", marginBottom:showLines && linesRows.length ? 12 : 0 }}>{schedStatus}</div>}
+      {schedStatus && <div style={{ fontSize:11, color:statusTone(schedStatus, linesRows.length > 0), marginBottom:showLines && linesRows.length ? 12 : 0 }}>{schedStatus}</div>}
 
       {showLines && (
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
@@ -514,14 +717,48 @@ export default function ScheduleAnalysis({
             const awayStats = liveStats[row.game.awayAbbr] ? { ...TEAMS[row.game.awayAbbr], ...liveStats[row.game.awayAbbr] } : TEAMS[row.game.awayAbbr]
             const isExpanded = expandedIdx === idx
             const isContextEditing = contextEditingIdx === idx
+            const sharpStatus = sharpStatusTone(row)
+            const hasManualOverride = !!(row.espnOdds && row.editedOdds && !sameOdds(row.editedOdds, row.espnOdds))
             return (
               <div key={`${row.game.homeAbbr}-${row.game.awayAbbr}-${idx}`} style={{ background:"#0a0600", border:"1px solid #1f1400", borderRadius:8, overflow:"hidden" }}>
                 <div style={{ padding:"12px 14px", display:"grid", gridTemplateColumns:"1.5fr 1.6fr auto auto", gap:10, alignItems:"center" }}>
                   <div>
-                    <div style={{ fontSize:9, color:"#7a6a3a", marginBottom:4 }}>{row.game.gameTime}{row.game.tvInfo ? ` · ${row.game.tvInfo}` : ""}</div>
+                    <div style={{ fontSize:9, color:"#7a6a3a", marginBottom:4 }}>
+                      {row.editedOdds
+                        ? `${row.game.gameTime} · ${hasManualOverride ? "Edited, Using Manual Line" : "Vegas Line"}`
+                        : row.game.gameTime}
+                    </div>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}><div style={{ fontSize:18, color:"#e8d5a0", fontWeight:700, fontFamily:"'Oswald',monospace" }}>{row.game.awayAbbr} at {row.game.homeAbbr}</div>{row.editedOdds?.source === "manual" && (<div style={{ fontSize:8, color:"#dbeafe", border:"1px solid rgba(96,165,250,0.28)", background:"rgba(96,165,250,0.08)", borderRadius:999, padding:"2px 7px", letterSpacing:1.4, fontWeight:700, lineHeight:1.2 }}>EDITED</div>)}</div>
                     <div style={{ fontSize:10, color:"#6a5a3a", marginTop:2 }}>
                       {sim ? `Proj ${sim.hScore}-${sim.aScore} · Total ${sim.total} · ${row.game.homeAbbr} ${(sim.hWinProb * 100).toFixed(1)}% / ${row.game.awayAbbr} ${(sim.aWinProb * 100).toFixed(1)}%` : "Run the model to generate projections"}
+                    </div>
+                    <div style={{ fontSize:9, color:"#8a7a4a", marginTop:4, lineHeight:1.45 }}>
+                      {hasManualOverride ? (
+                        <>
+                          <div style={{ color:"#6a5a3a" }}>
+                            {`V - ${formatCompactHeaderOddsSummary(row, row.espnOdds)}`}
+                          </div>
+                          <div style={{ color:"#93c5fd" }}>
+                            {`M - ${formatCompactHeaderOddsSummary(row, row.editedOdds)}`}
+                          </div>
+                        </>
+                      ) : row.editedOdds ? (
+                        <div style={{ color:"#8a7a4a" }}>
+                          {formatCompactHeaderOddsSummary(row, row.editedOdds)}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginTop:4 }}>
+                      <div style={{ fontSize:8, color:sharpStatus.color, border:`1px solid ${sharpStatus.border}`, background:sharpStatus.background, borderRadius:999, padding:"2px 7px", letterSpacing:1.2, fontWeight:700, lineHeight:1.2 }}>
+                        {sharpStatusLabel(row)}
+                      </div>
+                      <div style={{ fontSize:8, color:"#5a6a8a" }}>
+                        {row.sharpInput?.source
+                          ? `Sharp source: ${row.sharpInput.source}${row.sharpInput.lastUpdated ? ` | ${freshness(row.sharpInput.lastUpdated)}` : ""}`
+                          : row.marketData?.sourceLabel
+                            ? `Market source ready: ${row.marketData.sourceLabel}${row.marketData.lastUpdated ? ` | ${freshness(row.marketData.lastUpdated)}` : ""}`
+                            : "No live sharp source attached"}
+                      </div>
                     </div>
                   </div>
                   <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.12)", borderRadius:6, padding:"8px 10px" }}>
@@ -763,6 +1000,33 @@ export default function ScheduleAnalysis({
                                 <div style={{ fontSize:8, color:"#bfdbfe", fontWeight:700, letterSpacing:0.6 }} title="Quick read of which side or total has the strongest combined market support from movement, splits, and lean flags.">
                                   {inferMarketRead(row)}
                                 </div>
+                                <div style={{ background:"rgba(96,165,250,0.04)", border:"1px solid rgba(96,165,250,0.14)", borderRadius:6, padding:"7px 8px" }}>
+                                  <div style={{ fontSize:7, color:"#93c5fd", letterSpacing:1.2, marginBottom:6 }} title="Weighted snapshot of which side or total currently has the strongest sharp-style support.">SHARP SUPPORT BOARD</div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:6 }}>
+                                    {buildMarketSignalScores(row).map((signal) => (
+                                      <div
+                                        key={signal.key}
+                                        style={{
+                                          background:supportBackground(signal.score),
+                                          border:`1px solid ${supportBorder(signal.score)}`,
+                                          borderRadius:6,
+                                          padding:"7px 8px",
+                                        }}
+                                      >
+                                        <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.1, marginBottom:4 }}>{signal.label}</div>
+                                        <div style={{ fontSize:12, color:supportTone(signal.score), fontWeight:700, marginBottom:3 }}>
+                                          {signal.score}/6
+                                        </div>
+                                        <div style={{ fontSize:8, color:"#dbeafe", lineHeight:1.4 }}>
+                                          {signal.evidence > 0 ? `${signal.evidence} supporting flags` : "No support yet"}
+                                        </div>
+                                        <div style={{ fontSize:7, color:modelAgreementLabel(signal, row, analysis).startsWith("Model agrees") ? "#3fb950" : modelAgreementLabel(signal, row, analysis).startsWith("Model differs") ? "#fbbf24" : "#7a6a3a", marginTop:4, lineHeight:1.4 }}>
+                                          {modelAgreementLabel(signal, row, analysis)}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
                                 <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
                                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:6 }}>
                                     <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2 }} title="Opening, manual, and current Vegas market references for this matchup.">LINE MOVES</div>
@@ -883,9 +1147,10 @@ export default function ScheduleAnalysis({
                                   {row.projectedStarters.home?.starters?.length ? (
                                     row.projectedStarters.home.starters.map((starter) => {
                                       const injuryTag = starterInjuryTag(starter.player, row.game.homeAbbr, row.injuries)
+                                      const statLine = formatStarterStats(starter)
                                       return (
                                       <div key={`${row.game.homeAbbr}-${starter.position}-${starter.player}`} style={{ fontSize:8, color:"#e8d5a0" }}>
-                                        {starter.position}: {starter.player}{injuryTag ? <span style={{ color:"#f87171" }}> - {injuryTag}</span> : null}
+                                        {starter.position}: {starter.player}{statLine ? <span style={{ color:"#c9b27a" }}> - {statLine}</span> : null}{injuryTag ? <span style={{ color:"#f87171" }}> - {injuryTag}</span> : null}
                                       </div>
                                       )
                                     })
@@ -900,9 +1165,10 @@ export default function ScheduleAnalysis({
                                   {row.projectedStarters.away?.starters?.length ? (
                                     row.projectedStarters.away.starters.map((starter) => {
                                       const injuryTag = starterInjuryTag(starter.player, row.game.awayAbbr, row.injuries)
+                                      const statLine = formatStarterStats(starter)
                                       return (
                                       <div key={`${row.game.awayAbbr}-${starter.position}-${starter.player}`} style={{ fontSize:8, color:"#dbeafe" }}>
-                                        {starter.position}: {starter.player}{injuryTag ? <span style={{ color:"#f87171" }}> - {injuryTag}</span> : null}
+                                        {starter.position}: {starter.player}{statLine ? <span style={{ color:"#93c5fd" }}> - {statLine}</span> : null}{injuryTag ? <span style={{ color:"#f87171" }}> - {injuryTag}</span> : null}
                                       </div>
                                       )
                                     })

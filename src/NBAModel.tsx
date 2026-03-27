@@ -2,9 +2,12 @@
 import { useState } from "react";
 import { analyzeBetting, mlAmerican } from "./lib/betting";
 import { parseBulkOdds } from "./lib/bulkOddsParser";
+import { looksLikeVsinSharpImport, parseVsinSharpImport } from "./lib/vsinSharpParser";
 import { buildCompositeRecommendation, createCompositeFromSim, normalizeSharpSignals } from "./lib/compositeRecommendation";
 import { DIVISIONS, GAME_TYPES, TEAMS, parseBBRefCSV, predictGame } from "./lib/nbaModel";
 import { downloadCSV, fetchB2BTeams, fetchNBAColors, fetchProjectedStarters, fetchRecentForm, fetchTeamInjuries, fetchTodaySchedule, parseOddsFromEvent } from "./lib/espn";
+import { createMarketDataClient } from "./lib/marketData";
+import { deriveSharpInputFromMarketData } from "./lib/sharpSignals";
 import { usePredictorState } from "./hooks/usePredictorState";
 import { useResultsTracker } from "./hooks/useResultsTracker";
 import BBRefImportPanel from "./components/BBRefImportPanel";
@@ -34,6 +37,7 @@ function getErrorMessage(error: unknown): string {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function NBAModel() {
+  const marketDataClient = createMarketDataClient();
   const [divFilter,setDivFilter] = useState("ALL");
   const [activeTab, setActiveTab] = useState<ActiveTab>("predictor");
   const [showSingleGameTools, setShowSingleGameTools] = useState(false);
@@ -165,12 +169,14 @@ export default function NBAModel() {
     try {
       const { games, rawEvents } = await fetchTodaySchedule(setSchedStatus);
       if (!games.length) { setSchedStatus("No NBA games found today."); setSchedLoading(false); return; }
+      const today = new Date().toISOString().slice(0, 10);
       const rows = games.map(g => {
         let eo = null;
         for (const ev of rawEvents) { eo = parseOddsFromEvent(ev, g.homeAbbr, g.awayAbbr); if (eo) break; }
         return {
           game:g,
           espnOdds:eo,
+          marketData:null,
           editedOdds:eo?{...eo}:null,
           simResult:null,
           homeB2B:false,
@@ -184,13 +190,36 @@ export default function NBAModel() {
         };
       });
       setSchedStatus("Checking back-to-back games…");
-      const allAbbrs = [...new Set(rows.flatMap(r => [r.game.homeAbbr, r.game.awayAbbr]))];
+      const marketDataResult = await marketDataClient.fetchGames({ date: today, league: "nba" }).catch((error) => ({
+        provider: marketDataClient.provider.id,
+        sourceLabel: marketDataClient.provider.label,
+        status: "error",
+        fetchedAt: new Date().toISOString(),
+        capabilities: marketDataClient.provider.capabilities,
+        games: [],
+        errors: [getErrorMessage(error)],
+      }));
+      const marketDataMap = new Map(
+        (marketDataResult.games ?? []).map((game) => [`${game.game.homeAbbr}-${game.game.awayAbbr}`, game]),
+      );
+      const rowsWithMarketData = rows.map((row) => ({
+        ...row,
+        marketData: marketDataMap.get(`${row.game.homeAbbr}-${row.game.awayAbbr}`) ?? null,
+      })).map((row) => {
+        const derivedSharpInput = deriveSharpInputFromMarketData(row.marketData, row.editedOdds);
+        return {
+          ...row,
+          sharpInput: derivedSharpInput,
+          sharpContext: normalizeSharpSignals(derivedSharpInput, row.editedOdds),
+        };
+      });
+      const allAbbrs = [...new Set(rowsWithMarketData.flatMap(r => [r.game.homeAbbr, r.game.awayAbbr]))];
       const b2bSet   = await fetchB2BTeams(allAbbrs);
       setSchedStatus("Pulling recent form context...");
       const recentFormMap = await fetchRecentForm(allAbbrs);
       const injuryMap = await fetchTeamInjuries(allAbbrs, setSchedStatus);
       const starterMap = await fetchProjectedStarters(allAbbrs, setSchedStatus);
-      const withB2B  = rows.map(r => ({
+      const withB2B  = rowsWithMarketData.map(r => ({
         ...r,
         homeB2B:b2bSet.has(r.game.homeAbbr),
         awayB2B:b2bSet.has(r.game.awayAbbr),
@@ -205,6 +234,17 @@ export default function NBAModel() {
         },
       }));
       setLinesRows(withB2B); setShowLines(true);
+      const liveMarketCount = rowsWithMarketData.filter((row) => row.marketData?.current).length;
+      const marketStatusSuffix =
+        marketDataResult.status === "available"
+          ? ` Â· ${liveMarketCount} with ${marketDataResult.sourceLabel} market snapshots`
+          : marketDataResult.status === "not_configured"
+            ? ` Â· ${marketDataResult.sourceLabel} not configured`
+            : marketDataResult.status === "unsupported"
+              ? ` Â· ${marketDataResult.sourceLabel} unavailable`
+              : marketDataResult.errors?.[0]
+                ? ` Â· Market data warning: ${marketDataResult.errors[0]}`
+                : "";
       setSchedStatus(`${games.length} games loaded · ${rows.filter(r=>r.espnOdds).length} with ESPN lines${b2bSet.size>0?` · B2B: ${[...b2bSet].join(", ")}`:" · No B2B detected"}`);
     } catch(e) { setSchedStatus("Error: " + getErrorMessage(e)); }
     setSchedLoading(false);
@@ -269,6 +309,70 @@ export default function NBAModel() {
     setBulkError(""); setBulkStatus("");
     if (!bulkPaste.trim()) { setBulkError("Paste is empty"); return; }
     try {
+      if (looksLikeVsinSharpImport(bulkPaste)) {
+        const games = parseVsinSharpImport(bulkPaste);
+        let matched = 0;
+        const next = linesRows.map(row => {
+          const g = games.find(g =>
+            (g.homeAbbr === row.game.homeAbbr && g.awayAbbr === row.game.awayAbbr) ||
+            (g.homeAbbr === row.game.awayAbbr && g.awayAbbr === row.game.homeAbbr)
+          );
+          if (!g) return row;
+
+          let odds = g.odds ? { ...g.odds } : row.editedOdds ? { ...row.editedOdds } : null;
+          let sharpInput = { ...g.sharpInput };
+
+          if (g.homeAbbr !== row.game.homeAbbr) {
+            if (odds) {
+              odds = {
+                ...odds,
+                homeMoneyline: odds.awayMoneyline,
+                awayMoneyline: odds.homeMoneyline,
+                spread: -odds.spread,
+                spreadHomeOdds: odds.spreadAwayOdds,
+                spreadAwayOdds: odds.spreadHomeOdds,
+              };
+            }
+            sharpInput = {
+              ...sharpInput,
+              openingHomeMoneyline: g.sharpInput.openingAwayMoneyline ?? null,
+              openingAwayMoneyline: g.sharpInput.openingHomeMoneyline ?? null,
+              openingSpread: g.sharpInput.openingSpread != null ? -g.sharpInput.openingSpread : null,
+              moneylineHomeBetsPct: g.sharpInput.moneylineHomeBetsPct != null ? 100 - g.sharpInput.moneylineHomeBetsPct : null,
+              moneylineHomeMoneyPct: g.sharpInput.moneylineHomeMoneyPct != null ? 100 - g.sharpInput.moneylineHomeMoneyPct : null,
+              spreadHomeBetsPct: g.sharpInput.spreadHomeBetsPct != null ? 100 - g.sharpInput.spreadHomeBetsPct : null,
+              spreadHomeMoneyPct: g.sharpInput.spreadHomeMoneyPct != null ? 100 - g.sharpInput.spreadHomeMoneyPct : null,
+              consensusMoneyline:
+                g.sharpInput.consensusMoneyline === "home" ? "away" : g.sharpInput.consensusMoneyline === "away" ? "home" : "none",
+              consensusSpread:
+                g.sharpInput.consensusSpread === "home" ? "away" : g.sharpInput.consensusSpread === "away" ? "home" : "none",
+            };
+          }
+
+          matched++;
+          const normalizedOdds = odds ?? row.editedOdds;
+          const sharpContext = normalizeSharpSignals(sharpInput, normalizedOdds);
+          return {
+            ...row,
+            editedOdds: normalizedOdds,
+            simResult: null,
+            sharpInput,
+            sharpContext,
+            compositeRecommendation: null,
+          };
+        });
+
+        setLinesRows(next);
+        if (matched === 0) {
+          setBulkError(`Parsed ${games.length} VSiN game(s) but none matched today's schedule. Parsed teams: ${games.map(g => g.homeAbbr + " vs " + g.awayAbbr).join(", ")}`);
+        } else {
+          setBulkStatus(`✓ Imported VSiN sharp data for ${matched} of ${games.length} parsed games`);
+          setBulkPaste("");
+          setShowBulkImport(false);
+        }
+        return;
+      }
+
       const games = parseBulkOdds(bulkPaste);
       if (!games.length) throw new Error("No games parsed — check that team names match exactly");
       // Compute update synchronously against current linesRows

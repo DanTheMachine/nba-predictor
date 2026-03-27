@@ -32,7 +32,7 @@ vi.mock('./components/ScheduleAnalysis', () => ({
     handleLoadSchedule,
     handleRunAllSims,
   }: {
-    linesRows: Array<{ simResult?: unknown }>
+    linesRows: Array<{ simResult?: unknown; sharpInput?: { source?: string | null } | null }>
     handleExport: () => void
     handleLoadSchedule: () => void
     handleRunAllSims: () => void
@@ -42,6 +42,7 @@ vi.mock('./components/ScheduleAnalysis', () => ({
     return (
       <div>
         <button onClick={handleLoadSchedule}>LOAD GAMES</button>
+        {linesRows.some((row) => row.sharpInput?.source === 'OpticOdds') && <div>LIVE SHARP READY</div>}
         {linesRows.length > 0 && <button onClick={handleRunAllSims}>RUN ALL SIMS</button>}
         {hasSimResults && <button onClick={handleExport}>PREDICTIONS CSV</button>}
       </div>
@@ -143,6 +144,68 @@ vi.mock('./lib/espn', () => ({
   })),
 }))
 
+vi.mock('./lib/marketData', () => ({
+  createMarketDataClient: vi.fn(() => ({
+    provider: {
+      id: 'opticOdds',
+      label: 'OpticOdds',
+      capabilities: { opener: true, history: true, consensus: true, splits: false, live: true },
+    },
+    fetchGames: vi.fn(async () => ({
+      provider: 'opticOdds',
+      sourceLabel: 'OpticOdds',
+      status: 'available',
+      fetchedAt: '2026-03-24T12:00:00.000Z',
+      capabilities: { opener: true, history: true, consensus: true, splits: false, live: true },
+      games: [
+        {
+          game: { homeAbbr: 'BOS', awayAbbr: 'LAL' },
+          provider: 'opticOdds',
+          sourceLabel: 'OpticOdds',
+          lastUpdated: '2026-03-24T12:30:00.000Z',
+          opener: null,
+          current: {
+            timestamp: '2026-03-24T12:30:00.000Z',
+            homeMoneyline: -142,
+            awayMoneyline: 122,
+            spread: -4,
+            spreadHomeOdds: -110,
+            spreadAwayOdds: -110,
+            total: 220,
+            totalOverOdds: -110,
+            totalUnderOdds: -110,
+          },
+          books: [],
+          metadata: {},
+        },
+      ],
+      errors: [],
+    })),
+  })),
+}))
+
+vi.mock('./lib/sharpSignals', () => ({
+  deriveSharpInputFromMarketData: vi.fn((marketData) =>
+    marketData
+      ? {
+          source: 'OpticOdds',
+          lastUpdated: '2026-03-24T12:30:00.000Z',
+          openingHomeMoneyline: -120,
+          openingAwayMoneyline: 110,
+          openingSpread: -2.5,
+          openingTotal: 216.5,
+          consensusMoneyline: 'home',
+          consensusSpread: 'home',
+          consensusTotal: 'over',
+          clvLean: ['home', 'over'],
+          steamMoveLean: ['home'],
+          reverseLineMoveLean: ['over'],
+          notes: 'Derived from live market snapshots.',
+        }
+      : null,
+  ),
+}))
+
 import NBAModel from './NBAModel'
 
 describe('NBAModel export', () => {
@@ -154,6 +217,7 @@ describe('NBAModel export', () => {
     render(<NBAModel />)
 
     fireEvent.click(screen.getByRole('button', { name: /load games/i }))
+    expect(await screen.findByText('LIVE SHARP READY')).toBeInTheDocument()
     fireEvent.click(await screen.findByRole('button', { name: /run all sims/i }))
     fireEvent.click(await screen.findByRole('button', { name: /predictions csv/i }))
 

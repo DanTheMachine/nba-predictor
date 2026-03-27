@@ -8,7 +8,7 @@ vi.mock('./nbaModel', () => ({
   normalizeAbbr: (value: string) => value,
 }))
 
-import { fetchTeamInjuries, parseProjectedStartersFromHtml } from './espn'
+import { fetchProjectedStarters, fetchTeamInjuries, parseProjectedStartersFromHtml } from './espn'
 
 describe('fetchTeamInjuries', () => {
   afterEach(() => {
@@ -172,6 +172,99 @@ describe('fetchTeamInjuries', () => {
       ],
       source: 'ESPN depth chart',
       lastUpdated: expect.any(String),
+    })
+  })
+
+  it('attaches season stat summaries to projected starters', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          sports: [
+            {
+              leagues: [
+                {
+                  teams: [
+                    {
+                      team: {
+                        abbreviation: 'LAL',
+                        links: [{ rel: ['depthchart'], href: 'https://www.espn.com/nba/team/depth/_/name/lal' }],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          athletes: [
+            {
+              athlete: { displayName: 'Luka Doncic', teamShortName: 'LAL' },
+              categories: [
+                { name: 'general', values: [60, 36, 2, 0, 0, 0, 0, 0, 2000, 480, 120, 8.0] },
+                { name: 'offensive', values: [33.4, 10, 20, 50, 4, 10, 40, 8, 10, 80, 8.4, 4] },
+              ],
+            },
+            {
+              athlete: { displayName: 'LeBron James', teamShortName: 'LAL' },
+              categories: [
+                { name: 'general', values: [55, 35, 1.5, 0, 0, 0, 0, 0, 1900, 410, 90, 7.5] },
+                { name: 'offensive', values: [25.2, 9, 18, 50, 2.5, 6.5, 38, 4.5, 6, 78, 7.8, 3.5] },
+              ],
+            },
+          ],
+          categories: [
+            { name: 'general', names: ['gamesPlayed', 'avgMinutes', 'avgFouls', 'flagrantFouls', 'technicalFouls', 'ejections', 'doubleDouble', 'tripleDouble', 'minutes', 'rebounds', 'fouls', 'avgRebounds'] },
+            { name: 'offensive', names: ['avgPoints', 'avgFieldGoalsMade', 'avgFieldGoalsAttempted', 'fieldGoalPct', 'avgThreePointFieldGoalsMade', 'avgThreePointFieldGoalsAttempted', 'threePointFieldGoalPct', 'avgFreeThrowsMade', 'avgFreeThrowsAttempted', 'freeThrowPct', 'avgAssists', 'avgTurnovers'] },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => `
+          <html>
+            <body>
+              <table>
+                <tr>
+                  <th></th>
+                  <th>PG</th>
+                  <th>SG</th>
+                  <th>SF</th>
+                  <th>PF</th>
+                  <th>C</th>
+                </tr>
+                <tr>
+                  <td>Starter</td>
+                  <td>Luka Doncic</td>
+                  <td>Austin Reaves</td>
+                  <td>LeBron James</td>
+                  <td>Rui Hachimura</td>
+                  <td>Jaxson Hayes</td>
+                </tr>
+              </table>
+            </body>
+          </html>
+        `,
+      })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchProjectedStarters(['LAL'])
+
+    expect(result.LAL?.starters[0]).toEqual({
+      position: 'PG',
+      player: 'Luka Doncic',
+      stats: { pts: 33.4, ast: 8.4, reb: 8.0, onOff: null },
+    })
+    expect(result.LAL?.starters[2]).toEqual({
+      position: 'SF',
+      player: 'LeBron James',
+      stats: { pts: 25.2, ast: 7.8, reb: 7.5, onOff: null },
     })
   })
 })

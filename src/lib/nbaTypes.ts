@@ -98,6 +98,8 @@ export type OddsInput = {
   underOdds: number
 }
 
+import type { MarketDataGameSnapshot } from './marketData'
+
 export type BettingAnalysis = {
   homeImpliedProb: number
   awayImpliedProb: number
@@ -182,6 +184,12 @@ export type StarterPosition = 'PG' | 'SG' | 'SF' | 'PF' | 'C'
 export type ProjectedStarter = {
   position: StarterPosition
   player: string
+  stats?: {
+    pts: number | null
+    ast?: number | null
+    reb?: number | null
+    onOff?: number | null
+  }
 }
 
 export type ProjectedStarterInfo = {
@@ -239,6 +247,7 @@ export type ScheduleGame = {
 export type ScheduleRow = {
   game: ScheduleGame
   espnOdds: OddsInput | null
+  marketData: MarketDataGameSnapshot | null
   editedOdds: OddsInput | null
   simResult: PredictionResult | null
   homeB2B: boolean

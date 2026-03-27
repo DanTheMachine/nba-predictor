@@ -76,14 +76,27 @@ app.get('/proxy', async (req: Request<Record<string, never>, unknown, unknown, P
 
   const isEspn = url.includes('espn.com')
   const isEspnApi = url.includes('site.api.espn.com')
-  const headers = isEspn
-    ? (isEspnApi ? ESPN_HEADERS : ESPN_HTML_HEADERS)
-    : {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'no-cache',
-      }
+  const isOpticOdds = url.includes('api.opticodds.com')
+  const upstreamApiKey = req.header('x-upstream-api-key')
+  let headers: Record<string, string>
+  if (isEspn) {
+    headers = isEspnApi ? ESPN_HEADERS : ESPN_HTML_HEADERS
+  } else if (isOpticOdds && upstreamApiKey) {
+    headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      Accept: 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Cache-Control': 'no-cache',
+      'X-Api-Key': upstreamApiKey,
+    }
+  } else {
+    headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      Accept: 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Cache-Control': 'no-cache',
+    }
+  }
 
   try {
     const upstream = await fetch(url, { headers })

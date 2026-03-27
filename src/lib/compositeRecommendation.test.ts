@@ -6,6 +6,7 @@ import type { BettingAnalysis, ScheduleRow } from './nbaTypes'
 const baseRow: ScheduleRow = {
   game: { homeAbbr: 'BOS', awayAbbr: 'LAL', gameTime: '7:30 PM', tvInfo: 'ESPN' },
   espnOdds: null,
+  marketData: null,
   editedOdds: {
     source: 'manual',
     homeMoneyline: -145,

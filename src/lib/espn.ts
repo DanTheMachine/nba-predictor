@@ -76,6 +76,32 @@ type ESPNRosterResponse = {
   }>
 }
 
+type ESPNStatsCategoryDefinition = {
+  name?: string
+  names?: string[]
+}
+
+type ESPNStatsAthleteCategory = {
+  name?: string
+  values?: number[]
+}
+
+type ESPNStatsAthlete = {
+  athlete?: {
+    displayName?: string
+    fullName?: string
+    shortName?: string
+    teamShortName?: string
+    teams?: Array<{ abbreviation?: string }>
+  }
+  categories?: ESPNStatsAthleteCategory[]
+}
+
+type ESPNStatsByAthleteResponse = {
+  athletes?: ESPNStatsAthlete[]
+  categories?: ESPNStatsCategoryDefinition[]
+}
+
 function isTeamAbbr(value: string): value is TeamAbbr {
   return value in TEAMS
 }
@@ -88,6 +114,40 @@ function normalizeCellText(value: string | null | undefined): string {
 
 function extractStarterName(value: string): string {
   return normalizeCellText(value).replace(/\s+(O|DD|DTD|GTD|Q)$/i, '').trim()
+}
+
+function normalizePlayerKey(value: string): string {
+  return normalizeCellText(value).toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function extractStatValue(
+  athleteCategories: ESPNStatsAthleteCategory[] | undefined,
+  categoryDefinitions: ESPNStatsCategoryDefinition[] | undefined,
+  categoryName: string,
+  statName: string,
+): number | null {
+  const category = athleteCategories?.find((entry) => entry.name === categoryName)
+  const definition = categoryDefinitions?.find((entry) => entry.name === categoryName)
+  const index = definition?.names?.indexOf(statName) ?? -1
+  if (!category || index < 0) return null
+  const value = category.values?.[index]
+  return typeof value === 'number' && Number.isFinite(value) ? Number(value.toFixed(1)) : null
+}
+
+function applyStarterStats(
+  info: ProjectedStarterInfo | null,
+  team: TeamAbbr,
+  statsByPlayer: Map<string, { pts: number | null; ast: number | null; reb: number | null; onOff: number | null }>,
+): ProjectedStarterInfo | null {
+  if (!info) return null
+
+  return {
+    ...info,
+    starters: info.starters.map((starter) => ({
+      ...starter,
+      stats: statsByPlayer.get(`${team}:${normalizePlayerKey(starter.player)}`),
+    })),
+  }
 }
 
 function findDepthChartHref(team: { links?: Array<{ rel?: string[] | string; href?: string }> } | undefined): string | null {
@@ -420,13 +480,34 @@ export async function fetchProjectedStarters(
   const teamRes = await fetch(`${PROXY_URL}${encodeURIComponent('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams?limit=40')}`)
   if (!teamRes.ok) throw new Error(`ESPN teams: HTTP ${teamRes.status}`)
 
+  const statsRes = await fetch(
+    `${PROXY_URL}${encodeURIComponent('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false&limit=1000&sort=offensive.avgPoints%3Adesc')}`,
+  )
+  if (!statsRes.ok) throw new Error(`ESPN player stats: HTTP ${statsRes.status}`)
+
   const teamsData = (await teamRes.json()) as ESPNTeamsResponse
+  const statsData = (await statsRes.json()) as ESPNStatsByAthleteResponse
   const teamInfoByAbbr = new Map<TeamAbbr, { depthHref: string | null }>()
+  const statsByPlayer = new Map<string, { pts: number | null; ast: number | null; reb: number | null; onOff: number | null }>()
 
   for (const { team } of teamsData?.sports?.[0]?.leagues?.[0]?.teams ?? []) {
     const abbr = normalizeAbbr(team?.abbreviation?.toUpperCase() ?? '')
     if (!isTeamAbbr(abbr)) continue
     teamInfoByAbbr.set(abbr, { depthHref: findDepthChartHref(team) })
+  }
+
+  for (const athleteEntry of statsData.athletes ?? []) {
+    const athlete = athleteEntry.athlete
+    const player = athlete?.displayName ?? athlete?.fullName ?? athlete?.shortName ?? ''
+    const teamAbbr = normalizeAbbr(athlete?.teamShortName?.toUpperCase() ?? athlete?.teams?.[0]?.abbreviation?.toUpperCase() ?? '')
+    if (!player || !isTeamAbbr(teamAbbr)) continue
+
+    statsByPlayer.set(`${teamAbbr}:${normalizePlayerKey(player)}`, {
+      pts: extractStatValue(athleteEntry.categories, statsData.categories, 'offensive', 'avgPoints'),
+      ast: extractStatValue(athleteEntry.categories, statsData.categories, 'offensive', 'avgAssists'),
+      reb: extractStatValue(athleteEntry.categories, statsData.categories, 'general', 'avgRebounds'),
+      onOff: null,
+    })
   }
 
   const entries = await Promise.all(
@@ -438,7 +519,7 @@ export async function fetchProjectedStarters(
       if (!depthRes.ok) return [abbr, null] as const
 
       const html = await depthRes.text()
-      return [abbr, parseProjectedStartersFromHtml(html, abbr)] as const
+      return [abbr, applyStarterStats(parseProjectedStartersFromHtml(html, abbr), abbr, statsByPlayer)] as const
     }),
   )
 

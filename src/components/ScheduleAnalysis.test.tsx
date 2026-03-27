@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { normalizeSharpSignals } from '../lib/compositeRecommendation'
+import type { MarketDataGameSnapshot } from '../lib/marketData'
+import { deriveSharpInputFromMarketData } from '../lib/sharpSignals'
 
 import ScheduleAnalysis from './ScheduleAnalysis'
 import type {
@@ -63,6 +65,30 @@ const espnOdds: OddsInput = {
   source: 'espn',
 }
 
+const bulkEditedOdds: OddsInput = {
+  source: 'manual',
+  homeMoneyline: -165,
+  awayMoneyline: 140,
+  spread: -4.5,
+  spreadHomeOdds: -108,
+  spreadAwayOdds: -112,
+  overUnder: 220.5,
+  overOdds: -105,
+  underOdds: -115,
+}
+
+const evenMoneyEditedOdds: OddsInput = {
+  source: 'manual',
+  homeMoneyline: -120,
+  awayMoneyline: 0,
+  spread: -1.5,
+  spreadHomeOdds: -118,
+  spreadAwayOdds: -102,
+  overUnder: 222.5,
+  overOdds: -108,
+  underOdds: -112,
+}
+
 const analysis: BettingAnalysis = {
   homeImpliedProb: 0.58,
   awayImpliedProb: 0.42,
@@ -97,6 +123,7 @@ const makeRow = (): ScheduleRow => ({
     tvInfo: 'ESPN',
   },
   espnOdds,
+  marketData: null,
   editedOdds,
   simResult: prediction,
   homeB2B: false,
@@ -117,11 +144,11 @@ const makeRow = (): ScheduleRow => ({
     home: {
       team: 'BOS',
       starters: [
-        { position: 'PG', player: 'Jrue Holiday' },
-        { position: 'SG', player: 'Derrick White' },
-        { position: 'SF', player: 'Jaylen Brown' },
-        { position: 'PF', player: 'Jayson Tatum' },
-        { position: 'C', player: 'Kristaps Porzingis' },
+        { position: 'PG', player: 'Jrue Holiday', stats: { pts: 14.1, ast: 5.8, reb: 4.4 } },
+        { position: 'SG', player: 'Derrick White', stats: { pts: 16.2, ast: 4.9, reb: 4.1 } },
+        { position: 'SF', player: 'Jaylen Brown', stats: { pts: 25.1, ast: 4.3, reb: 6.6 } },
+        { position: 'PF', player: 'Jayson Tatum', stats: { pts: 27.4, ast: 5.9, reb: 8.7 } },
+        { position: 'C', player: 'Kristaps Porzingis', stats: { pts: 20.2, ast: 1.9, reb: 7.4 } },
       ],
       source: 'ESPN depth chart',
       lastUpdated: '2026-03-24T01:05:00.000Z',
@@ -129,11 +156,11 @@ const makeRow = (): ScheduleRow => ({
     away: {
       team: 'LAL',
       starters: [
-        { position: 'PG', player: 'Luka Doncic' },
-        { position: 'SG', player: 'Austin Reaves' },
-        { position: 'SF', player: 'LeBron James' },
-        { position: 'PF', player: 'Rui Hachimura' },
-        { position: 'C', player: 'Jaxson Hayes' },
+        { position: 'PG', player: 'Luka Doncic', stats: { pts: 33.4, ast: 8.4, reb: 8.0 } },
+        { position: 'SG', player: 'Austin Reaves', stats: { pts: 19.1, ast: 5.7, reb: 4.8 } },
+        { position: 'SF', player: 'LeBron James', stats: { pts: 25.2, ast: 7.8, reb: 7.5 } },
+        { position: 'PF', player: 'Rui Hachimura', stats: { pts: 13.7, ast: 1.4, reb: 5.3 } },
+        { position: 'C', player: 'Jaxson Hayes', stats: { pts: 6.8, ast: 0.9, reb: 5.9 } },
       ],
       source: 'ESPN depth chart',
       lastUpdated: '2026-03-24T01:05:00.000Z',
@@ -193,6 +220,67 @@ const makeSharpRow = (): ScheduleRow => ({
   },
 })
 
+const marketData: MarketDataGameSnapshot = {
+  game: { homeAbbr: 'BOS', awayAbbr: 'LAL' },
+  provider: 'opticOdds',
+  sourceLabel: 'OpticOdds',
+  lastUpdated: '2026-03-24T01:15:00.000Z',
+  opener: {
+    timestamp: '2026-03-24T00:15:00.000Z',
+    homeMoneyline: -120,
+    awayMoneyline: 110,
+    spread: -2.5,
+    spreadHomeOdds: -110,
+    spreadAwayOdds: -110,
+    total: 216.5,
+    totalOverOdds: -110,
+    totalUnderOdds: -110,
+  },
+  current: {
+    timestamp: '2026-03-24T01:15:00.000Z',
+    homeMoneyline: -145,
+    awayMoneyline: 125,
+    spread: -4,
+    spreadHomeOdds: -110,
+    spreadAwayOdds: -110,
+    total: 220,
+    totalOverOdds: -110,
+    totalUnderOdds: -110,
+  },
+  books: [
+    {
+      bookId: 'draftkings',
+      bookName: 'DraftKings',
+      timestamp: '2026-03-24T01:15:00.000Z',
+      homeMoneyline: -145,
+      awayMoneyline: 125,
+      spread: {
+        home: { line: -4, odds: -110 },
+        away: { line: 4, odds: -110 },
+      },
+      total: {
+        over: { line: 220, odds: -110 },
+        under: { line: 220, odds: -110 },
+      },
+    },
+    {
+      bookId: 'fanduel',
+      bookName: 'FanDuel',
+      timestamp: '2026-03-24T01:15:00.000Z',
+      homeMoneyline: -150,
+      awayMoneyline: 128,
+      spread: {
+        home: { line: -4.5, odds: -110 },
+        away: { line: 4.5, odds: -110 },
+      },
+      total: {
+        over: { line: 220.5, odds: -112 },
+        under: { line: 220.5, odds: -108 },
+      },
+    },
+  ],
+}
+
 const teams = {
   BOS: makeTeam('Boston Celtics'),
   LAL: makeTeam('Los Angeles Lakers'),
@@ -247,6 +335,30 @@ describe('ScheduleAnalysis', () => {
     renderScheduleAnalysis(makeRow())
 
     expect(screen.getByText('EDITED')).toBeInTheDocument()
+    expect(screen.getByText('7:30 PM EDT · Vegas Line')).toBeInTheDocument()
+    expect(screen.getByText('LAL +120 / BOS -140 | LAL +3.5 -110 / BOS -3.5 -110 | O/U 218.5 (-110 / -110)')).toBeInTheDocument()
+    expect(screen.getByText('NO SHARP')).toBeInTheDocument()
+    expect(screen.getByText('No live sharp source attached')).toBeInTheDocument()
+  })
+
+  it('shows both loaded and edited odds in the game card header when they differ', () => {
+    renderScheduleAnalysis({ ...makeRow(), editedOdds: bulkEditedOdds })
+
+    expect(screen.getByText('7:30 PM EDT · Edited, Using Manual Line')).toBeInTheDocument()
+    expect(screen.getByText('V - LAL +120 / BOS -140 | LAL +3.5 -110 / BOS -3.5 -110 | O/U 218.5 (-110 / -110)')).toBeInTheDocument()
+    expect(screen.getByText('M - LAL +140 / BOS -165 | LAL +4.5 -112 / BOS -4.5 -108 | O/U 220.5 (-105 / -115)')).toBeInTheDocument()
+  })
+
+  it('renders even money as 100 in the compact header odds display', () => {
+    renderScheduleAnalysis({
+      ...makeRow(),
+      game: { ...makeRow().game, homeAbbr: 'CHA', awayAbbr: 'NYK', gameTime: '7:00 PM EDT', tvInfo: 'FanDuel SN SE, MSG, NBA TV' },
+      editedOdds: evenMoneyEditedOdds,
+      espnOdds: evenMoneyEditedOdds,
+    })
+
+    expect(screen.getByText('7:00 PM EDT · Vegas Line')).toBeInTheDocument()
+    expect(screen.getByText('NYK +100 / CHA -120 | NYK +1.5 -102 / CHA -1.5 -118 | O/U 222.5 (-108 / -112)')).toBeInTheDocument()
   })
 
   it('renders projected starters with inline injury designations', () => {
@@ -256,8 +368,9 @@ describe('ScheduleAnalysis', () => {
 
     expect(screen.getByText('SHARP INFORMATION')).toBeInTheDocument()
     expect(screen.getByText('PROJECTED STARTERS')).toBeInTheDocument()
+    expect(screen.getByText((_, element) => element?.textContent === 'PG: Jrue Holiday - 14.1 PPG 5.8 APG')).toBeInTheDocument()
     expect(
-      screen.getByText((_, element) => element?.textContent === 'SF: LeBron James - Out'),
+      screen.getByText((_, element) => element?.textContent === 'SF: LeBron James - 25.2 PPG 7.5 RPG - Out'),
     ).toBeInTheDocument()
   })
 
@@ -270,6 +383,7 @@ describe('ScheduleAnalysis', () => {
     expect(screen.getByText('PROJECTED STARTERS')).toBeInTheDocument()
     expect(screen.getByText('MARKET SIGNALS')).toBeInTheDocument()
     expect(screen.getByText('INJURIES')).toBeInTheDocument()
+    expect(screen.getByText('SHARP SUPPORT BOARD')).toBeInTheDocument()
     expect(screen.getByText('LINE MOVES')).toBeInTheDocument()
     expect(screen.getByText('MOVE SUMMARY')).toBeInTheDocument()
     expect(screen.getByText('SPLITS')).toBeInTheDocument()
@@ -278,14 +392,22 @@ describe('ScheduleAnalysis', () => {
     expect(screen.getByText('Vegas Current')).toBeInTheDocument()
     expect(screen.getByText('Manual Current')).toBeInTheDocument()
     expect(screen.getByText('Market read: BOS support')).toBeInTheDocument()
+    expect(screen.getByText('MANUAL SHARP')).toBeInTheDocument()
+    expect(screen.getByText((content) => content.startsWith('Sharp source: manual'))).toBeInTheDocument()
+    expect(screen.getByText('BOS ML')).toBeInTheDocument()
+    expect(screen.getByText('4/6')).toBeInTheDocument()
+    expect(screen.getByText('Model agrees: BOS ML edge')).toBeInTheDocument()
+    expect(screen.getByText('UNDER')).toBeInTheDocument()
+    expect(screen.getByText('3/6')).toBeInTheDocument()
+    expect(screen.getByText('Model differs: OVER edge')).toBeInTheDocument()
     expect(screen.getByText('Books moved toward Boston while over stayed public.')).toBeInTheDocument()
     expect(screen.getByText('CLV: HOME, UNDER')).toBeInTheDocument()
     expect(screen.getByText('ML: BOS')).toBeInTheDocument()
     expect(screen.getByText('Total: UNDER')).toBeInTheDocument()
   })
 
-  it('loads sample sharp context into existing schedule rows', () => {
-    const row = makeRow()
+  it('refreshes live sharp context from market snapshots', () => {
+    const row = { ...makeRow(), marketData }
     const setLinesRows = vi.fn()
 
     render(
@@ -323,15 +445,16 @@ describe('ScheduleAnalysis', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'LOAD SAMPLE SHARP' }))
+    fireEvent.click(screen.getByRole('button', { name: 'REFRESH LIVE SHARP' }))
 
     expect(setLinesRows).toHaveBeenCalledTimes(1)
     const updater = setLinesRows.mock.calls[0]?.[0]
     expect(typeof updater).toBe('function')
 
     const [updatedRow] = updater([row])
-    expect(updatedRow.sharpInput?.source).toBe('sample')
-    expect(updatedRow.sharpInput?.notes).toContain('sample sharp context')
+    expect(updatedRow.sharpInput).toEqual(deriveSharpInputFromMarketData(row.marketData, row.editedOdds))
+    expect(updatedRow.sharpInput?.source).toBe('OpticOdds')
+    expect(updatedRow.sharpInput?.notes).toContain('consensus sample')
     expect(updatedRow.sharpContext).toEqual(normalizeSharpSignals(updatedRow.sharpInput, updatedRow.editedOdds))
   })
 })

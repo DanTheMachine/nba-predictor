@@ -3,11 +3,12 @@
 ## Current State
 
 - The project has already been migrated to TypeScript.
-- `npm run test`, `npm run test:e2e`, `npm run build`, `npm run lint`, and `npm run typecheck` are currently passing.
+- `npm run build`, `npm run lint`, and `npm run typecheck` are currently passing.
 - The large `NBAModel_29` file was renamed to `NBAModel.tsx`.
 - `src/NBAModel.tsx` still has a temporary `// @ts-nocheck` and is not fully typed yet.
 - The main schedule workflow has been extracted, but `NBAModel.tsx` is still a coordinator with broad state and handler props.
 - The main schedule UX is now driven by expandable game intelligence cards rather than the old best-bets-first layout.
+- A temporary VSiN sharp-data import path now exists through the existing bulk import box.
 
 ## Refactors Completed
 
@@ -82,10 +83,16 @@
   - ranked summary panel
   - manual sharp / injury editing
 - `NBAModel.tsx` now acts more like a coordinator and passes state/handlers into `ScheduleAnalysis`.
+- The schedule load banner now surfaces market-data configuration / warning status from the live sharp provider workflow.
 
 ## Game Intelligence Card Status
 
 - The schedule area now renders closed-by-default cards for each loaded game.
+- The game card header now shows:
+  - a compact `Vegas Line` row when loaded/current odds match
+  - an `Edited, Using Manual Line` header with:
+    - `V - ...` for the loaded market line
+    - `M - ...` for the manual/imported sim line in blue
 - The expanded card currently includes:
   - `MODEL & MARKET`
   - `TEAM COMPARISON`
@@ -113,6 +120,9 @@
   - load from ESPN depth chart pages during `LOAD GAMES`
   - render inside `SHARP INFORMATION`
   - append matching injury designations in red when a projected starter is also listed in the injury feed
+  - show compact stat lines:
+    - `PG` / `SG`: `PPG APG`
+    - `SF` / `PF` / `C`: `PPG RPG`
 - Manually edited odds now show an `EDITED` badge on the game card header.
 - Composite recommendation types and export fields exist, but the current UI is intentionally still simulation-first rather than final-recommendation-first.
 
@@ -190,6 +200,28 @@
   - fractional glyph variants like `½`
   - sportsbook alias names such as `LA LAKERS`, `LA CLIPPERS`, and city-only paste variants
 
+## Sharp Import Status
+
+- A temporary VSiN adapter now exists in:
+  - `src/lib/vsinSharpParser.ts`
+- Focused unit coverage was added in:
+  - `src/lib/vsinSharpParser.test.ts`
+- The existing bulk import textarea in `ScheduleAnalysis.tsx` now auto-detects VSiN-style paste blocks and imports:
+  - opening spread / current spread by book
+  - opening moneyline / current moneyline by book
+  - opening total / current total by book
+  - spread, total, and moneyline bet % / money %
+- The VSiN adapter is intentionally loosely coupled:
+  - it maps pasted data into `editedOdds` and `sharpInput`
+  - it does not replace the provider-backed market-data abstraction
+  - the old sportsbook bulk-odds parser still works for non-VSiN paste formats
+- The imported sharp source currently shows as:
+  - `VSiN Import`
+- The parser currently prefers:
+  - `DK` current lines for imported active odds when available
+  - opener fields from `DK Open`
+- This path is intended as a temporary / low-cost workaround while API-backed sharp data remains unavailable.
+
 ## Testing And CI
 
 - Vitest, Testing Library, and Playwright are now set up.
@@ -201,6 +233,7 @@
 - Current test coverage includes:
   - betting math unit tests in `src/lib/betting.test.ts`
   - bulk odds parser unit tests in `src/lib/bulkOddsParser.test.ts`
+  - VSiN sharp import unit tests in `src/lib/vsinSharpParser.test.ts`
   - ESPN injury normalization and projected starter parser tests in `src/lib/espn.test.ts`
   - predictor hook tests in `src/hooks/usePredictorState.test.ts`
   - results tracker hook tests in `src/hooks/useResultsTracker.test.ts`
@@ -226,9 +259,8 @@
 - `ScheduleAnalysis.tsx` is currently the most actively iterated UX surface and now carries most of the game-card presentation logic.
 - Composite recommendation infrastructure exists, but the user-facing workflow still prioritizes sim results and market breakdowns while the final recommendation UX is being shaped.
 - The latest focused test run for:
-  - `src/hooks/usePredictorState.test.ts`
-  - `src/hooks/useResultsTracker.test.ts`
-  - `src/components/SingleGameResults.test.tsx`
+  - `src/lib/vsinSharpParser.test.ts`
+  - `src/components/ScheduleAnalysis.test.tsx`
   passed `7/7`.
 
 ## Best Next Steps
@@ -238,3 +270,4 @@
 3. Consider a `useScheduleAnalysisState`-style hook if we want the schedule/export workflow to follow the same pattern as results and single-game predictor state.
 4. Remove `@ts-nocheck` from `src/NBAModel.tsx` by typing the remaining state/helpers after a few more extractions.
 5. Backtest the updated model against historical NBA results to tune win-probability calibration and spread/total variance assumptions.
+6. Consider adding lightweight UI guidance in the bulk import panel so users know it now accepts both standard sportsbook odds blocks and multi-section VSiN sharp-data paste.
