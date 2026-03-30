@@ -204,10 +204,6 @@ function toLookupKey(date: string, home: string, away: string): string {
   return `${date.replace(/-/g, '')}${home}${away}`
 }
 
-function clampPct(value: number): number {
-  return Math.max(0, Math.min(100, value))
-}
-
 export function parsePredictionsCsv(text: string): ParsedPredictionRow[] {
   const rows = parseTable(text)
   if (rows.length < 2) throw new Error('Predictions CSV needs a header row and at least one data row.')
@@ -366,7 +362,7 @@ function summarize(rows: EvaluatedBetRow[]): EvaluationSummary {
   const settled = wins + losses + pushes
   const totalBets = rows.length
   const roiUnits = rows.reduce((sum, row) => sum + row.units, 0)
-  const stakeTotal = rows.filter((row) => row.result !== 'PENDING').reduce((sum, row) => sum + 1, 0)
+  const stakeTotal = rows.filter((row) => row.result !== 'PENDING').length
   const roiPct = stakeTotal > 0 ? (roiUnits / stakeTotal) * 100 : null
   const winPct = settled > 0 ? ((wins / settled) * 100).toFixed(1) : '-'
 
