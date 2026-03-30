@@ -74,4 +74,47 @@ describe('modelEvaluation', () => {
     expect(results[0]?.away).toBe('LAL')
     expect(results[0]?.lookupKey).toBe('20260320BOSLAL')
   })
+
+  it('parses a cumulative predictions sheet with summary rows above the header', () => {
+    const predictions = parsePredictionsCsv(
+      `\t\t\t\t34 Units\t-9 Units
+\t\t\t\t55-21\t75-85
+Date\tTime\tHome\tAway\tH Win%\tA Win%\tML Rec\tOver Odds\tUnder Odds\tVegas Spread\tSpread Home Odds\tSpread Away Odds\tVegas H ML\tVegas A ML\tSpread Rec\tO/U Rec\tML Edge%\tSPR Edge%\tOU Edge%\tML Bet\tLookupKey\tActual Home
+2026-03-23\t7:00 PM EDT\tDET Pistons\tLAL Lakers\t64.9%\t35.1%\tHOME - DET\t-105\t-105\t+1.5\t-105\t-105\t+100\t-110\tHOME +1.5\tOVER\t+16.0%\t+9.4%\t+3.8%\t2\t20260323DETLAL\t113`,
+    )
+
+    expect(predictions).toHaveLength(1)
+    expect(predictions[0]?.home).toBe('DET')
+    expect(predictions[0]?.away).toBe('LAL')
+    expect(predictions[0]?.mlRec).toBe('HOME - DET')
+    expect(predictions[0]?.lookupKey).toBe('20260323DETLAL')
+    expect(predictions[0]?.mlEdgePct).toBe(16)
+    expect(predictions[0]?.actualMlBet).toBe(2)
+  })
+
+  it('parses results rows without a header row', () => {
+    const results = parseResultsCsv(`2026-03-20,BOS,LAL,118,110
+2026-03-21,CLE,NYK,101,99`)
+
+    expect(results).toHaveLength(2)
+    expect(results[0]?.lookupKey).toBe('20260320BOSLAL')
+    expect(results[1]?.home).toBe('CLE')
+    expect(results[1]?.awayScore).toBe(99)
+  })
+
+  it('builds rich market and threshold breakdowns when edge and actual-bet fields are present', () => {
+    const predictions = parsePredictionsCsv(`"Date","Home","Away","H Win%","A Win%","ML Rec","Vegas H ML","Spread Rec","Spread Home Odds","O/U Rec","Over Odds","Vegas O/U","LookupKey","ML Edge%","SPR Edge%","OU Edge%","ML Bet","Spread Bet","OU Bet"
+"2026-03-20","BOS Celtics","LAL Lakers","61.0%","39.0%","HOME - BOS","-150","HOME -4.0","-110","OVER","-110","220.0","20260320BOSLAL","+6.0%","+5.0%","+10.0%","2","1","3"`)
+    const results = parseResultsCsv(`"Date","Home","Away","Home Score","Away Score","LookupKey"
+"2026-03-20","BOS","LAL","118","110","20260320BOSLAL"`)
+
+    const report = evaluatePredictions(predictions, results)
+
+    expect(report.markets[0]?.actual.totalBets).toBe(1)
+    expect(report.markets[0]?.actual.roiUnits).toBeCloseTo(1.3333, 3)
+    expect(report.edgeThresholds.find((bucket) => bucket.label === 'Edge 6%+')?.summary.totalBets).toBe(2)
+    expect(report.calibration.find((bucket) => bucket.label === '60-65%')?.games).toBe(1)
+    expect(report.totalsCalibration.find((row) => row.label === 'OVER')?.games).toBe(1)
+    expect(report.totalsEdgeBuckets.find((row) => row.label === '10%+')?.games).toBe(1)
+  })
 })

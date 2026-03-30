@@ -47,7 +47,7 @@ export default function BBRefImportPanel({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: hasLive ? '#fbbf24' : '#4b5563', boxShadow: hasLive ? '0 0 8px #fbbf24' : 'none' }} />
             <span style={{ fontSize: 11, color: hasLive ? '#fbbf24' : '#6a5a3a' }}>
-              {hasLive ? `✓ Live stats active · ${Object.keys(liveStats).length} teams · ${statsUpdated}` : 'Paste BBRef Miscellaneous Stats CSV to update all 30 teams'}
+              {hasLive ? `✓ Live stats active · ${Object.keys(liveStats).length} teams · ${statsUpdated}` : 'Paste BBRef Misc Stats CSV to update all 30 teams - defaults updated Mar 30, 2026'}
             </span>
           </div>
           {bbrefStatus && !bbrefError && <div style={{ fontSize: 10, color: '#3fb950', marginTop: 4 }}>{bbrefStatus}</div>}

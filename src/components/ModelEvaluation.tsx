@@ -5,10 +5,18 @@ import {
   parsePredictionsCsv,
   parseResultsCsv,
   type EvaluationReport,
+  type EvaluationSummary,
 } from '../lib/modelEvaluation'
 
 type ModelEvaluationProps = {
   card: CSSProperties
+}
+
+function metricColor(value: number | null): string {
+  if (value == null) return '#e8d5a0'
+  if (value > 0) return '#3fb950'
+  if (value < 0) return '#f87171'
+  return '#fbbf24'
 }
 
 function SummaryCard({
@@ -16,7 +24,7 @@ function SummaryCard({
   summary,
 }: {
   label: string
-  summary: EvaluationReport['moneyline']
+  summary: EvaluationSummary
 }) {
   return (
     <div
@@ -32,12 +40,59 @@ function SummaryCard({
         {summary.wins}-{summary.losses}
       </div>
       <div style={{ fontSize: 10, color: '#9a8a5a', marginTop: 4 }}>
-        {summary.totalBets} bets | {summary.winPct}% | ROI {summary.roiUnits >= 0 ? '+' : ''}
+        {summary.totalBets} bets | {summary.winPct}% | Units {summary.roiUnits >= 0 ? '+' : ''}
         {summary.roiUnits.toFixed(2)}u
       </div>
       <div style={{ fontSize: 9, color: '#5a4a2a', marginTop: 4 }}>
-        Push {summary.pushes} | Pending {summary.pending}
+        ROI {summary.roiPct == null ? '-' : `${summary.roiPct >= 0 ? '+' : ''}${summary.roiPct.toFixed(1)}%`} | Push {summary.pushes} | Pending {summary.pending}
       </div>
+    </div>
+  )
+}
+
+function DetailLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: '#9a8a5a' }}>
+      <span>{label}</span>
+      <span style={{ color: '#e8d5a0', whiteSpace: 'nowrap' }}>{value}</span>
+    </div>
+  )
+}
+
+function DetailValueLine({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string
+  value: string
+  valueColor?: string
+}) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: '#9a8a5a' }}>
+      <span>{label}</span>
+      <span style={{ color: valueColor ?? '#e8d5a0', whiteSpace: 'nowrap' }}>{value}</span>
+    </div>
+  )
+}
+
+function MarketBreakdownCard({ market }: { market: EvaluationReport['markets'][number] }) {
+  return (
+    <div style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.13)', borderRadius: 8, padding: '14px 16px' }}>
+      <div style={{ fontSize: 10, color: '#fbbf24', letterSpacing: 3, marginBottom: 10 }}>{market.label}</div>
+      <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 2, marginBottom: 6 }}>MODEL BETS</div>
+      <DetailLine label="Bets" value={String(market.all.totalBets)} />
+      <DetailLine label="Record" value={`${market.all.wins}-${market.all.losses}-${market.all.pushes}`} />
+      <DetailLine label="Hit rate" value={`${market.all.winPct}%`} />
+      <DetailValueLine label="Units" value={`${market.all.roiUnits >= 0 ? '+' : ''}${market.all.roiUnits.toFixed(2)}u`} valueColor={metricColor(market.all.roiUnits)} />
+      <DetailValueLine label="ROI" value={market.all.roiPct == null ? '-' : `${market.all.roiPct >= 0 ? '+' : ''}${market.all.roiPct.toFixed(1)}%`} valueColor={metricColor(market.all.roiPct)} />
+      <div style={{ height: 1, background: 'rgba(255,200,80,0.08)', margin: '10px 0' }} />
+      <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 2, marginBottom: 6 }}>ACTUAL BETS</div>
+      <DetailLine label="Bets" value={String(market.actual.totalBets)} />
+      <DetailLine label="Record" value={`${market.actual.wins}-${market.actual.losses}-${market.actual.pushes}`} />
+      <DetailLine label="Hit rate" value={`${market.actual.winPct}%`} />
+      <DetailValueLine label="Units" value={`${market.actual.roiUnits >= 0 ? '+' : ''}${market.actual.roiUnits.toFixed(2)}u`} valueColor={metricColor(market.actual.roiUnits)} />
+      <DetailValueLine label="ROI" value={market.actual.roiPct == null ? '-' : `${market.actual.roiPct >= 0 ? '+' : ''}${market.actual.roiPct.toFixed(1)}%`} valueColor={metricColor(market.actual.roiPct)} />
     </div>
   )
 }
@@ -173,6 +228,90 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
             <SummaryCard label="MONEYLINE" summary={report.moneyline} />
             <SummaryCard label="SPREAD" summary={report.spread} />
             <SummaryCard label="TOTALS" summary={report.totals} />
+          </div>
+
+          <div style={{ ...card, marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>ROI BY MARKET</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+              {report.markets.map((market) => (
+                <MarketBreakdownCard key={market.label} market={market} />
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div style={card}>
+              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>EDGE THRESHOLDS</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {report.edgeThresholds.map((bucket) => (
+                  <div key={bucket.label} style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, color: '#fbbf24', marginBottom: 6 }}>{bucket.label}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, fontSize: 10 }}>
+                      <DetailLine label="Bets" value={String(bucket.summary.totalBets)} />
+                      <DetailLine label="Record" value={`${bucket.summary.wins}-${bucket.summary.losses}-${bucket.summary.pushes}`} />
+                      <DetailLine label="Hit" value={`${bucket.summary.winPct}%`} />
+                      <DetailValueLine label="ROI" value={bucket.summary.roiPct == null ? '-' : `${bucket.summary.roiPct >= 0 ? '+' : ''}${bucket.summary.roiPct.toFixed(1)}%`} valueColor={metricColor(bucket.summary.roiPct)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>CALIBRATION</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {report.calibration.map((bucket) => (
+                  <div key={bucket.label} style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 0.9fr 1fr', gap: 8, fontSize: 10, background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
+                    <div style={{ color: '#fbbf24' }}>{bucket.label}</div>
+                    <div style={{ color: '#e8d5a0' }}>Games: {bucket.games}</div>
+                    <div style={{ color: '#e8d5a0' }}>Accuracy: {bucket.accuracy}</div>
+                    <div style={{ color: '#e8d5a0' }}>Avg predicted: {bucket.avgPredicted}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div style={card}>
+              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>O/U CALIBRATION</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {report.totalsCalibration.map((row) => (
+                  <div key={row.label} style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, color: '#fbbf24', marginBottom: 6 }}>{row.label}</div>
+                    <DetailLine label="Games" value={String(row.games)} />
+                    <DetailLine label="Avg edge" value={row.avgEdge} />
+                    {row.passNote ? (
+                      <div style={{ fontSize: 10, color: '#6a5a3a', marginTop: 6 }}>{row.passNote}</div>
+                    ) : (
+                      <>
+                        <DetailLine label="Record" value={row.record ?? '-'} />
+                        <DetailLine label="Hit rate" value={row.hitRate ?? '-'} />
+                        <DetailValueLine label="Units" value={row.units ?? '-'} valueColor={row.units?.startsWith('+') ? '#3fb950' : row.units?.startsWith('-') ? '#f87171' : '#e8d5a0'} />
+                        <DetailValueLine label="ROI" value={row.roi ?? '-'} valueColor={row.roi?.startsWith('+') ? '#3fb950' : row.roi?.startsWith('-') ? '#f87171' : '#e8d5a0'} />
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>O/U EDGE BUCKETS</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {report.totalsEdgeBuckets.map((row) => (
+                  <div key={row.label} style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, color: '#fbbf24', marginBottom: 6 }}>{row.label}</div>
+                    <DetailLine label="Bets" value={String(row.games)} />
+                    <DetailLine label="Avg edge" value={row.avgEdge} />
+                    <DetailLine label="Record" value={row.record ?? '-'} />
+                    <DetailLine label="Hit rate" value={row.hitRate ?? '-'} />
+                    <DetailValueLine label="Units" value={row.units ?? '-'} valueColor={row.units?.startsWith('+') ? '#3fb950' : row.units?.startsWith('-') ? '#f87171' : '#e8d5a0'} />
+                    <DetailValueLine label="ROI" value={row.roi ?? '-'} valueColor={row.roi?.startsWith('+') ? '#3fb950' : row.roi?.startsWith('-') ? '#f87171' : '#e8d5a0'} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div style={{ ...card }}>

@@ -354,6 +354,14 @@ function statusTone(status: string, hasRows: boolean): string {
   return hasRows ? "#3fb950" : "#5a4a2a"
 }
 
+function signalMarketLabel(tagLabel: string): string {
+  if (tagLabel.startsWith("ML")) return "ML Home"
+  if (tagLabel.startsWith("Spread")) return "ATS Home"
+  if (tagLabel.startsWith("Total")) return "O/U Over"
+  if (tagLabel === "CLV lean" || tagLabel === "Steam" || tagLabel === "RLM") return "Market"
+  return "Market"
+}
+
 type MarketSignalScore = {
   key: "home" | "away" | "over" | "under"
   label: string
@@ -1254,7 +1262,7 @@ export default function ScheduleAnalysis({
                                   <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                                     {row.sharpContext.tags.length ? row.sharpContext.tags.map((tag, tagIndex) => (
                                       <div key={`${tag.label}-${tagIndex}`} title={`${tag.label}: ${tag.aligned ? "supports the inferred sharp read" : "is mixed or cautionary"}.`} style={{ fontSize:8, color:sharpTone(tag.aligned), border:`1px solid ${tag.aligned ? "rgba(63,185,80,0.25)" : "rgba(245,158,11,0.25)"}`, background:tag.aligned ? "rgba(63,185,80,0.08)" : "rgba(245,158,11,0.08)", borderRadius:999, padding:"3px 7px" }}>
-                                        {tag.detail}
+                                        {signalMarketLabel(tag.label)} · {tag.detail}
                                       </div>
                                     )) : (
                                       <div style={{ fontSize:8, color:"#7a6a3a" }}>No sharp flags yet</div>

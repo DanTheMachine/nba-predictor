@@ -106,7 +106,7 @@ function resolveTeamAbbr(name: string): TeamAbbr | null {
 }
 
 function parseSignedNumber(value: string): number | null {
-  const clean = cleanLine(value).replace(/^EVEN$/i, '+100')
+  const clean = cleanLine(value).replace(/,/g, '').replace(/^EVEN$/i, '+100')
   const match = clean.match(/^([+-])?(\d+(?:\.\d+)?)$/)
   if (!match) return null
   const numeric = Number(match[2])
@@ -127,6 +127,14 @@ function parseMoneylineCell(value: string): MoneylineCell {
   const clean = cleanLine(value)
   if (clean === '-') return null
   return parseSignedNumber(clean)
+}
+
+function parseUnsignedNumber(value: string): number | null {
+  const clean = cleanLine(value).replace(/,/g, '')
+  const match = clean.match(/^(\d+(?:\.\d+)?)$/)
+  if (!match) return null
+  const numeric = Number(match[1])
+  return Number.isFinite(numeric) ? numeric : null
 }
 
 function parseTotalCell(value: string): TotalCell {
@@ -426,10 +434,218 @@ function parseSplitsSection(lines: string[], startIndex: number, store: Map<stri
 }
 
 export function looksLikeVsinSharpImport(raw: string): boolean {
-  return raw.includes('DK Open') && (raw.includes('Thursday,') || raw.includes('Time'))
+  return (
+    (raw.includes('DK Open') && (raw.includes('Thursday,') || raw.includes('Time'))) ||
+    (raw.includes('NBA - ') && raw.includes('\tSpread\tHandle\tBets\tTotal\tHandle\tBets\tMoney\tHandle\tBets'))
+  )
+}
+
+type CompactTeamRow = {
+  team: TeamAbbr
+  spread: number
+  spreadMoneyPct: number | null
+  spreadBetPct: number | null
+  total: number
+  totalMoneyPct: number | null
+  totalBetPct: number | null
+  moneyline: number
+  moneylineMoneyPct: number | null
+  moneylineBetPct: number | null
+}
+
+function isControlToken(value: string): boolean {
+  const clean = cleanLine(value)
+  return clean === '↺' || clean === '▲' || clean === '▼' || /^\d+$/.test(clean)
+}
+
+function tokenizeCompactLine(line: string): string[] {
+  return line
+    .split('\t')
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function findTeamToken(tokens: string[]): { team: TeamAbbr; index: number } | null {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const abbr = resolveTeamAbbr(tokens[index] ?? '')
+    if (abbr) return { team: abbr, index }
+  }
+  return null
+}
+
+function isCompactTeamLine(line: string): boolean {
+  const tokens = tokenizeCompactLine(line)
+  const teamToken = findTeamToken(tokens)
+  if (!teamToken) return false
+  return tokens.slice(teamToken.index + 1).some((token) => parseSignedNumber(token) != null)
+}
+
+function parseCompactTeamRow(tokens: string[]): CompactTeamRow {
+  const teamToken = findTeamToken(tokens)
+  if (!teamToken) throw new Error(`Could not resolve VSiN compact team row: ${tokens.join(' | ')}`)
+
+  const values = tokens
+    .slice(teamToken.index + 1)
+    .filter((token) => !isControlToken(token))
+
+  let cursor = 0
+  const nextSigned = (): number | null => {
+    while (cursor < values.length) {
+      const parsed = parseSignedNumber(values[cursor] ?? '')
+      cursor += 1
+      if (parsed != null) return parsed
+    }
+    return null
+  }
+  const nextPct = (): number | null => {
+    while (cursor < values.length) {
+      const token = values[cursor] ?? ''
+      cursor += 1
+      if (token.includes('%')) return parsePct(token)
+    }
+    return null
+  }
+  const nextUnsigned = (): number | null => {
+    while (cursor < values.length) {
+      const parsed = parseUnsignedNumber(values[cursor] ?? '')
+      cursor += 1
+      if (parsed != null) return parsed
+    }
+    return null
+  }
+
+  const spread = nextSigned()
+  const spreadMoneyPct = nextPct()
+  const spreadBetPct = nextPct()
+  const total = nextUnsigned()
+  const totalMoneyPct = nextPct()
+  const totalBetPct = nextPct()
+  const moneyline = nextSigned()
+  const moneylineMoneyPct = nextPct()
+  const moneylineBetPct = nextPct()
+
+  if (spread == null || total == null || moneyline == null) {
+    throw new Error(`Incomplete VSiN compact team row for ${teamToken.team}`)
+  }
+
+  return {
+    team: teamToken.team,
+    spread,
+    spreadMoneyPct,
+    spreadBetPct,
+    total,
+    totalMoneyPct,
+    totalBetPct,
+    moneyline,
+    moneylineMoneyPct,
+    moneylineBetPct,
+  }
+}
+
+function parseCompactBoard(raw: string): ParsedVsinSharpGame[] {
+  const lines = raw.split(/\r?\n/).map((line) => line.replace(/\u00a0/g, ''))
+  const groupedRows: string[][] = []
+  let current: string[] | null = null
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+    if (!line) continue
+    if (line.startsWith('NBA - ')) continue
+    if (line.includes('\tSpread\tHandle\tBets\tTotal\tHandle\tBets\tMoney\tHandle\tBets')) continue
+
+    if (isCompactTeamLine(line)) {
+      if (current?.length) groupedRows.push(current)
+      current = tokenizeCompactLine(line)
+      continue
+    }
+
+    if (current) current.push(...tokenizeCompactLine(line))
+  }
+
+  if (current?.length) groupedRows.push(current)
+  if (groupedRows.length < 2) throw new Error('No VSiN compact board games parsed from paste')
+
+  const parsedRows = groupedRows.map(parseCompactTeamRow)
+  const games: ParsedVsinSharpGame[] = []
+
+  for (let index = 0; index < parsedRows.length; index += 2) {
+    const away = parsedRows[index]
+    const home = parsedRows[index + 1]
+    if (!away || !home) break
+
+    const odds: OddsInput = {
+      source: 'vsin',
+      awayMoneyline: away.moneyline,
+      homeMoneyline: home.moneyline,
+      spread: home.spread,
+      spreadHomeOdds: -110,
+      spreadAwayOdds: -110,
+      overUnder: away.total,
+      overOdds: -110,
+      underOdds: -110,
+    }
+
+    const consensusMoneyline =
+      home.moneylineMoneyPct != null && away.moneylineMoneyPct != null
+        ? home.moneylineMoneyPct > away.moneylineMoneyPct
+          ? 'home'
+          : away.moneylineMoneyPct > home.moneylineMoneyPct
+            ? 'away'
+            : 'none'
+        : 'none'
+
+    const consensusSpread =
+      home.spreadMoneyPct != null && away.spreadMoneyPct != null
+        ? home.spreadMoneyPct > away.spreadMoneyPct
+          ? 'home'
+          : away.spreadMoneyPct > home.spreadMoneyPct
+            ? 'away'
+            : 'none'
+        : 'none'
+
+    const consensusTotal =
+      away.totalMoneyPct != null && home.totalMoneyPct != null
+        ? away.totalMoneyPct > home.totalMoneyPct
+          ? 'over'
+          : home.totalMoneyPct > away.totalMoneyPct
+            ? 'under'
+            : 'none'
+        : 'none'
+
+    games.push({
+      awayAbbr: away.team,
+      homeAbbr: home.team,
+      odds,
+      sharpInput: {
+        source: 'VSiN Import',
+        lastUpdated: new Date().toISOString(),
+        openingHomeMoneyline: null,
+        openingAwayMoneyline: null,
+        openingSpread: null,
+        openingTotal: null,
+        moneylineHomeBetsPct: home.moneylineBetPct,
+        moneylineHomeMoneyPct: home.moneylineMoneyPct,
+        spreadHomeBetsPct: home.spreadBetPct,
+        spreadHomeMoneyPct: home.spreadMoneyPct,
+        totalOverBetsPct: away.totalBetPct,
+        totalOverMoneyPct: away.totalMoneyPct,
+        consensusMoneyline,
+        consensusSpread,
+        consensusTotal,
+        notes: 'Imported from pasted VSiN compact board data.',
+      },
+    })
+  }
+
+  if (!games.length) throw new Error('No VSiN compact board games parsed from paste')
+  return games
 }
 
 export function parseVsinSharpImport(raw: string): ParsedVsinSharpGame[] {
+  if (raw.includes('NBA - ') && raw.includes('\tSpread\tHandle\tBets\tTotal\tHandle\tBets\tMoney\tHandle\tBets')) {
+    return parseCompactBoard(raw)
+  }
+
   const lines = raw.split(/\r?\n/).map((line) => line.replace(/\u00a0/g, ' ').trim()).filter(Boolean)
   const store = new Map<string, VsinGameAccumulator>()
 

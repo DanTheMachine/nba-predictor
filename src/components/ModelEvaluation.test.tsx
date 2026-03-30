@@ -27,10 +27,14 @@ describe('ModelEvaluation', () => {
 
     expect(screen.getByText(/evaluated 3 recommended bets across 1 predictions/i)).toBeInTheDocument()
     expect(screen.getAllByText('1-0')).toHaveLength(3)
+    expect(screen.getByText('ROI BY MARKET')).toBeInTheDocument()
+    expect(screen.getByText('EDGE THRESHOLDS')).toBeInTheDocument()
+    expect(screen.getByText('CALIBRATION')).toBeInTheDocument()
+    expect(screen.getByText('O/U CALIBRATION')).toBeInTheDocument()
     expect(screen.getByText(/BET LOG \| 3 bets \| 3 settled/i)).toBeInTheDocument()
     expect(screen.getByText('HOME - BOS')).toBeInTheDocument()
     expect(screen.getByText('BOS -4.5')).toBeInTheDocument()
-    expect(screen.getByText('OVER')).toBeInTheDocument()
+    expect(screen.getAllByText('OVER').length).toBeGreaterThan(0)
   })
 
   it('shows a friendly error for malformed CSV input', () => {

@@ -132,4 +132,46 @@ Charlotte Hornets
     expect(game.sharpInput.consensusSpread).toBe('home')
     expect(game.sharpInput.consensusTotal).toBe('over')
   })
+
+  it('parses the compact VSiN board layout with wrapped arrow rows', () => {
+    const raw = `NBA - Monday, Mar 30\tSpread\tHandle\tBets\tTotal\tHandle\tBets\tMoney\tHandle\tBets
+↺\tPhiladelphia 76ers\t-2.5\t56%\t71%\t242.5\t52%
+▲
+39%\t-142\t88%\t73%
+7\tMiami Heat\t+2.5\t44%\t29%\t242.5\t48%
+▼
+61%\t+120\t12%\t27%
+↺\tBoston Celtics\t+2.5\t54%\t66%\t224.5\t75%
+▲
+72%\t+120\t45%\t65%
+3\tAtlanta Hawks\t-2.5\t46%\t34%\t224.5\t25%
+▼
+28%\t-142\t55%\t35%`
+
+    const games = parseVsinSharpImport(raw)
+
+    expect(games).toHaveLength(2)
+    expect(games[0]?.awayAbbr).toBe('PHI')
+    expect(games[0]?.homeAbbr).toBe('MIA')
+    expect(games[0]?.odds).toEqual({
+      source: 'vsin',
+      awayMoneyline: -142,
+      homeMoneyline: 120,
+      spread: 2.5,
+      spreadHomeOdds: -110,
+      spreadAwayOdds: -110,
+      overUnder: 242.5,
+      overOdds: -110,
+      underOdds: -110,
+    })
+    expect(games[0]?.sharpInput.moneylineHomeMoneyPct).toBe(12)
+    expect(games[0]?.sharpInput.moneylineHomeBetsPct).toBe(27)
+    expect(games[0]?.sharpInput.spreadHomeMoneyPct).toBe(44)
+    expect(games[0]?.sharpInput.spreadHomeBetsPct).toBe(29)
+    expect(games[0]?.sharpInput.totalOverMoneyPct).toBe(52)
+    expect(games[0]?.sharpInput.totalOverBetsPct).toBe(39)
+    expect(games[0]?.sharpInput.consensusMoneyline).toBe('away')
+    expect(games[0]?.sharpInput.consensusSpread).toBe('away')
+    expect(games[0]?.sharpInput.consensusTotal).toBe('over')
+  })
 })

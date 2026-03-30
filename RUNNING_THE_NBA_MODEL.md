@@ -279,6 +279,10 @@ What it does:
 - matches games by lookup key and team/date data
 - grades Money Line, spread, and over/under outcomes
 - shows win-loss and ROI summaries by market
+- now accepts:
+  - results CSV paste with or without a header row
+  - cumulative predictions spreadsheet paste with extra rows above the real header
+  - comma-delimited CSV or tab-delimited spreadsheet paste
 
 What is different between the two tabs:
 
@@ -310,6 +314,11 @@ What to look at:
 - `OVER / UNDER`
 - graded game count
 - ROI by market
+- `ROI BY MARKET`
+- `EDGE THRESHOLDS`
+- moneyline `CALIBRATION`
+- `O/U CALIBRATION`
+- `O/U EDGE BUCKETS`
 
 ## 8. Single-Game Workflow
 
@@ -451,7 +460,7 @@ Symptoms:
 Fixes:
 
 - load today's games first
-- use the standard team-block paste format
+- use the standard team-block paste format, legacy multi-section VSiN dump, or the newer compact VSiN board layout
 - confirm the pasted teams match the same slate already loaded in the app
 
 ### Results grading is incomplete

@@ -51,6 +51,17 @@
   - existing ML odds and `LookupKey`
 - Moneyline grading now uses the explicit `ML Rec` recommendation when present instead of inferring from `H Win% > 50`.
 - The evaluator still includes fallbacks for older CSVs when some of the new columns are missing.
+- The evaluator is now more tolerant of pasted spreadsheet workflows:
+  - results CSV input can be parsed with or without a header row
+  - predictions CSV input can be parsed from cumulative sheets with extra rows above the real header
+  - both comma-delimited CSV and tab-delimited spreadsheet paste formats are supported
+- The `MODEL EVAL` screen now shows richer breakdown sections in addition to the original per-market summaries:
+  - `ROI BY MARKET`
+  - `EDGE THRESHOLDS`
+  - moneyline `CALIBRATION`
+  - `O/U CALIBRATION`
+  - `O/U EDGE BUCKETS`
+- When optional `ML Bet`, `OU Bet`, and `Spread Bet` columns are present in the pasted predictions sheet, the evaluator now also reports `Actual Bets` subsets alongside the model-wide summaries.
 
 ## Model Calibration Changes
 
@@ -126,6 +137,10 @@
   - `SHARP` below recent form
   - `INJURIES` below projected starters
   - inline italic freshness timestamps for recent form, projected starters, sharp context, and injuries
+- The `SIGNAL SUMMARY` chips now prepend market labels so split-based tags are easier to read:
+  - `ML Home`
+  - `ATS Home`
+  - `O/U Over`
 - Projected starters now:
   - load from ESPN depth chart pages during `LOAD GAMES`
   - render inside `SHARP INFORMATION`
@@ -198,6 +213,8 @@
 - The single-game predictor state/actions now live in:
   - `src/hooks/usePredictorState.ts`
 - `NBAModel.tsx` still has mojibake-heavy legacy text/style strings, but it is materially smaller and more coordinator-oriented than before.
+- Direct component coverage now exists for:
+  - `src/components/SingleGameControls.tsx`
 
 ## Bulk Odds Parser Status
 
@@ -222,6 +239,9 @@
   - opening moneyline / current moneyline by book
   - opening total / current total by book
   - spread, total, and moneyline bet % / money %
+- The VSiN adapter now also supports the newer compact board-style VSiN paste layout with wrapped arrow rows:
+  - `NBA - ... Spread / Handle / Bets / Total / Handle / Bets / Money / Handle / Bets`
+  - that compact format imports current odds and split percentages even when opener-by-book fields are not present
 - The VSiN adapter is intentionally loosely coupled:
   - it maps pasted data into `editedOdds` and `sharpInput`
   - it does not replace the provider-backed market-data abstraction
@@ -252,6 +272,7 @@
   - ESPN injury normalization and projected starter parser tests in `src/lib/espn.test.ts`
   - predictor hook tests in `src/hooks/usePredictorState.test.ts`
   - results tracker hook tests in `src/hooks/useResultsTracker.test.ts`
+  - single-game controls component tests in `src/components/SingleGameControls.test.tsx`
   - single-game results component tests in `src/components/SingleGameResults.test.tsx`
   - schedule card UI tests in `src/components/ScheduleAnalysis.test.tsx`
   - evaluator parser/grading unit tests in `src/lib/modelEvaluation.test.ts`
@@ -281,10 +302,9 @@
 
 ## Best Next Steps
 
-1. Add tests for `src/components/SingleGameControls.tsx`, since it is now one of the main extracted predictor UI surfaces without direct coverage.
-2. Keep shrinking `src/NBAModel.tsx` by extracting the remaining small predictor shell pieces, such as the ESPN colors banner and toggle/header wrappers.
-3. Consider a `useScheduleAnalysisState`-style hook if we want the schedule/export workflow to follow the same pattern as results and single-game predictor state.
-4. Remove `@ts-nocheck` from `src/NBAModel.tsx` by typing the remaining state/helpers after a few more extractions.
-5. Backtest the updated model against historical NBA results to tune win-probability calibration and spread/total variance assumptions.
-6. Consider adding lightweight UI guidance in the bulk import panel so users know it now accepts both standard sportsbook odds blocks and multi-section VSiN sharp-data paste.
-7. Decide whether the best-bets summary should remain an all-candidates slate board or gain optional filtering such as top 3 only, grouped by market, or grouped by tier.
+1. Keep shrinking `src/NBAModel.tsx` by extracting the remaining small predictor shell pieces, such as the ESPN colors banner and toggle/header wrappers.
+2. Consider a `useScheduleAnalysisState`-style hook if we want the schedule/export workflow to follow the same pattern as results and single-game predictor state.
+3. Remove `@ts-nocheck` from `src/NBAModel.tsx` by typing the remaining state/helpers after a few more extractions.
+4. Backtest the updated model against historical NBA results to tune win-probability calibration and spread/total variance assumptions.
+5. Consider adding lightweight UI guidance in the bulk import panel so users know it now accepts standard sportsbook odds blocks, legacy multi-section VSiN sharp-data paste, and the newer compact VSiN board layout.
+6. Decide whether the best-bets summary should remain an all-candidates slate board or gain optional filtering such as top 3 only, grouped by market, or grouped by tier.
