@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildCompositeRecommendation, normalizeSharpSignals } from './compositeRecommendation'
+import { buildCompositeCandidates, buildCompositeRecommendation, normalizeSharpSignals } from './compositeRecommendation'
 import type { BettingAnalysis, ScheduleRow } from './nbaTypes'
 
 const baseRow: ScheduleRow = {
@@ -93,5 +93,12 @@ describe('compositeRecommendation', () => {
     expect(rec.primaryMarket).toBe('ML')
     expect(rec.score).toBeGreaterThan(60)
     expect(rec.pass).toBe(false)
+  })
+
+  it('returns all playable market candidates for slate-level best-bet ranking', () => {
+    const candidates = buildCompositeCandidates(baseRow, analysis)
+
+    expect(candidates.map((candidate) => candidate.primaryMarket)).toEqual(['ML', 'O/U', 'SPR'])
+    expect(candidates.every((candidate) => candidate.pass === false)).toBe(true)
   })
 })

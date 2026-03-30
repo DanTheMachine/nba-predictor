@@ -1,5 +1,9 @@
 import type { BettingAnalysis, OddsInput, PredictionResult } from './nbaTypes'
 
+const ML_RECOMMENDATION_EDGE = 0.04
+const SPREAD_RECOMMENDATION_EDGE = 0.05
+const TOTAL_RECOMMENDATION_POINTS = 3
+
 export function americanToImplied(ml: number): number {
   if (!ml || Number.isNaN(ml)) return 0.5
   return ml < 0 ? -ml / (-ml + 100) : 100 / (ml + 100)
@@ -24,7 +28,7 @@ export function analyzeBetting(result: PredictionResult, odds: OddsInput): Betti
   const aIC = aI / vig
   const hEdge = result.hWinProb - hIC
   const aEdge = result.aWinProb - aIC
-  const mlSide = hEdge > 0.025 ? 'home' : aEdge > 0.025 ? 'away' : 'none'
+  const mlSide = hEdge > ML_RECOMMENDATION_EDGE ? 'home' : aEdge > ML_RECOMMENDATION_EDGE ? 'away' : 'none'
   const mlPct = Math.max(hEdge, aEdge) * 100
 
   const diff = parseFloat(result.hScore) - parseFloat(result.aScore)
@@ -42,11 +46,16 @@ export function analyzeBetting(result: PredictionResult, odds: OddsInput): Betti
   const spAEdge = aCover - spAI / spVig
   const spHLabel = homeFav ? `home ${odds.spread}` : `home +${spAbs}`
   const spALabel = homeFav ? `away +${spAbs}` : `away -${spAbs}`
-  const spreadRec = spHEdge > 0.03 ? spHLabel : spAEdge > 0.03 ? spALabel : 'pass'
+  const spreadRec = spHEdge > SPREAD_RECOMMENDATION_EDGE ? spHLabel : spAEdge > SPREAD_RECOMMENDATION_EDGE ? spALabel : 'pass'
   const spreadEdge = Math.max(spHEdge, spAEdge) * 100
   const proj = parseFloat(result.total)
   const ouEdge = proj - odds.overUnder
-  const ouRec = ouEdge > 2 ? 'over' : ouEdge < -2 ? 'under' : 'pass'
+  const ouRec =
+    ouEdge > TOTAL_RECOMMENDATION_POINTS
+      ? 'over'
+      : ouEdge < -TOTAL_RECOMMENDATION_POINTS
+        ? 'under'
+        : 'pass'
 
   const pOver = 1 - normCDF((odds.overUnder - proj) / std)
   const pUnder = 1 - pOver

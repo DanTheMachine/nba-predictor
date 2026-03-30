@@ -226,13 +226,17 @@ export function predictGame({
   const aScore = Math.max(85, projectedTotal / 2 - projectedMargin / 2);
   const diff = hScore - aScore;
   const hWinProb = normalWinProb(diff);
+  const displayHScore = Number(hScore.toFixed(1));
+  const displayAScore = Number(aScore.toFixed(1));
+  const displayTotal = displayHScore + displayAScore;
+  const displayDiff = displayHScore - displayAScore;
 
   return {
     hWinProb, aWinProb: 1 - hWinProb,
-    hScore:   hScore.toFixed(1),
-    aScore:   aScore.toFixed(1),
-    total:    (hScore + aScore).toFixed(1),
-    projDiff: diff.toFixed(1),
+    hScore:   displayHScore.toFixed(1),
+    aScore:   displayAScore.toFixed(1),
+    total:    displayTotal.toFixed(1),
+    projDiff: displayDiff.toFixed(1),
     isPlayoff,
     features: [
       { label:`${homeTeam} Offensive Rating`, good: h.offRtg >= 117,  detail: h.offRtg.toFixed(1) },

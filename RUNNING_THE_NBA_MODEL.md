@@ -229,6 +229,11 @@ What it does:
   - win probabilities
   - betting edges
   - spread and total recommendations
+- populates the `BEST BETS SUMMARY` card below the slate cards
+
+Important note:
+
+- the displayed projected team scores, total, and projected score difference now come from one consistent rounded display layer, so the visible team scores add up to the visible total
 
 ### 7.7 Export predictions
 
@@ -348,6 +353,24 @@ Expanded card includes:
 - `MODEL & MARKET`
 - `TEAM COMPARISON`
 - `SHARP INFORMATION`
+
+Below the game-card stack, the schedule area now also includes:
+
+- `BEST BETS SUMMARY`
+
+That summary currently:
+
+- ranks all playable `ML`, `SPR`, and `O/U` candidates across the slate
+- sorts them by edge percentage
+- shows tier and composite score
+- shows market-specific projection context in the middle column
+- shows sharp context when available, otherwise `No Sharp Information`
+- shows the pick with the relevant odds on the right
+
+Important behavior distinction:
+
+- the raw `ML`, `SPR`, and `O/U` recommendations come from model-versus-market thresholds
+- the tier / score line is a heuristic ranking layer, not a calibrated confidence percentage
 
 `SHARP INFORMATION` currently contains:
 
@@ -516,6 +539,7 @@ What this covers:
 - CSV evaluation logic through UI-facing test cases
 - extracted hook tests for predictor/results workflows
 - extracted helper tests such as bulk odds parsing
+- composite recommendation and best-bets ranking logic
 
 Examples of focused test runs:
 
@@ -525,6 +549,10 @@ npm run test -- --run src/hooks/usePredictorState.test.ts src/hooks/useResultsTr
 
 ```powershell
 npm run test -- --run src/lib/bulkOddsParser.test.ts
+```
+
+```powershell
+npm run test -- --run src/components/ScheduleAnalysis.test.tsx src/lib/compositeRecommendation.test.ts src/lib/betting.test.ts
 ```
 
 ### 12.2 Playwright UI tests

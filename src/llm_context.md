@@ -65,6 +65,11 @@
 - Files involved:
   - `src/lib/nbaModel.ts`
   - `src/lib/betting.ts`
+- Recommendation sensitivity was also tightened in `src/lib/betting.ts` without changing the underlying simulation:
+  - Moneyline recommendations now require edge above `4.0%`
+  - spread recommendations now require cover edge above `5.0%`
+  - totals recommendations now require projected total to differ from the market total by more than `3.0` points
+- The displayed `hScore`, `aScore`, `total`, and `projDiff` values in `src/lib/nbaModel.ts` are now rounded from one consistent display layer so shown team scores add up cleanly to the shown total.
 
 ## Documentation Added
 
@@ -80,7 +85,7 @@
   - schedule controls
   - bulk odds import UI
   - expandable game intelligence cards
-  - ranked summary panel
+  - ranked best-bets summary panel
   - manual sharp / injury editing
 - `NBAModel.tsx` now acts more like a coordinator and passes state/handlers into `ScheduleAnalysis`.
 - The schedule load banner now surfaces market-data configuration / warning status from the live sharp provider workflow.
@@ -97,6 +102,11 @@
   - `MODEL & MARKET`
   - `TEAM COMPARISON`
   - `SHARP INFORMATION`
+- A `BEST BETS SUMMARY` card now renders after the game cards and before the single-game tools panel.
+- That summary now:
+  - ranks all playable market candidates across the loaded slate rather than only one composite winner per game
+  - sorts the list by market edge percentage
+  - shows tier / score, market-specific projection detail, sharp detail or `No Sharp Information`, and the pick with odds
 - `MODEL & MARKET` currently shows:
   - Vegas and manual line rows
   - projected score / total
@@ -125,6 +135,7 @@
     - `SF` / `PF` / `C`: `PPG RPG`
 - Manually edited odds now show an `EDITED` badge on the game card header.
 - Composite recommendation types and export fields exist, but the current UI is intentionally still simulation-first rather than final-recommendation-first.
+- Composite scoring still exists, but it should be understood as a heuristic rank/strength score rather than a calibrated probability or true confidence measure.
 
 ## ESPN Context Fetching Status
 
@@ -221,6 +232,9 @@
   - `DK` current lines for imported active odds when available
   - opener fields from `DK Open`
 - This path is intended as a temporary / low-cost workaround while API-backed sharp data remains unavailable.
+- Important behavior distinction:
+  - raw `ML`, `SPR`, and `O/U` recommendations come from model-vs-market logic in `src/lib/betting.ts`
+  - sharp inputs are currently used in the composite recommendation / ranking layer and schedule card context, not as a prerequisite for generating the raw recommendations
 
 ## Testing And CI
 
@@ -232,6 +246,7 @@
   - `.github/workflows/ci.yml`
 - Current test coverage includes:
   - betting math unit tests in `src/lib/betting.test.ts`
+  - composite recommendation unit tests in `src/lib/compositeRecommendation.test.ts`
   - bulk odds parser unit tests in `src/lib/bulkOddsParser.test.ts`
   - VSiN sharp import unit tests in `src/lib/vsinSharpParser.test.ts`
   - ESPN injury normalization and projected starter parser tests in `src/lib/espn.test.ts`
@@ -259,9 +274,10 @@
 - `ScheduleAnalysis.tsx` is currently the most actively iterated UX surface and now carries most of the game-card presentation logic.
 - Composite recommendation infrastructure exists, but the user-facing workflow still prioritizes sim results and market breakdowns while the final recommendation UX is being shaped.
 - The latest focused test run for:
-  - `src/lib/vsinSharpParser.test.ts`
   - `src/components/ScheduleAnalysis.test.tsx`
-  passed `7/7`.
+  - `src/lib/compositeRecommendation.test.ts`
+  - `src/lib/betting.test.ts`
+  passed `22/22` across the latest focused runs touching the recommendation / best-bets workflow.
 
 ## Best Next Steps
 
@@ -271,3 +287,4 @@
 4. Remove `@ts-nocheck` from `src/NBAModel.tsx` by typing the remaining state/helpers after a few more extractions.
 5. Backtest the updated model against historical NBA results to tune win-probability calibration and spread/total variance assumptions.
 6. Consider adding lightweight UI guidance in the bulk import panel so users know it now accepts both standard sportsbook odds blocks and multi-section VSiN sharp-data paste.
+7. Decide whether the best-bets summary should remain an all-candidates slate board or gain optional filtering such as top 3 only, grouped by market, or grouped by tier.

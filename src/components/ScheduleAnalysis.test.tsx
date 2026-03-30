@@ -394,7 +394,7 @@ describe('ScheduleAnalysis', () => {
     expect(screen.getByText('Market read: BOS support')).toBeInTheDocument()
     expect(screen.getByText('MANUAL SHARP')).toBeInTheDocument()
     expect(screen.getByText((content) => content.startsWith('Sharp source: manual'))).toBeInTheDocument()
-    expect(screen.getByText('BOS ML')).toBeInTheDocument()
+    expect(screen.getAllByText('BOS ML').length).toBeGreaterThan(0)
     expect(screen.getByText('4/6')).toBeInTheDocument()
     expect(screen.getByText('Model agrees: BOS ML edge')).toBeInTheDocument()
     expect(screen.getByText('UNDER')).toBeInTheDocument()
@@ -404,6 +404,15 @@ describe('ScheduleAnalysis', () => {
     expect(screen.getByText('CLV: HOME, UNDER')).toBeInTheDocument()
     expect(screen.getByText('ML: BOS')).toBeInTheDocument()
     expect(screen.getByText('Total: UNDER')).toBeInTheDocument()
+  })
+
+  it('renders a best bets summary card after simulated game cards', () => {
+    renderScheduleAnalysis(makeSharpRow())
+
+    expect(screen.getByText('BEST BETS SUMMARY')).toBeInTheDocument()
+    expect(screen.getByText('Top playable recommendations ranked by edge percentage.')).toBeInTheDocument()
+    expect(screen.getAllByText('BOS ML').length).toBeGreaterThan(0)
+    expect(screen.getByText('+4.2%')).toBeInTheDocument()
   })
 
   it('refreshes live sharp context from market snapshots', () => {

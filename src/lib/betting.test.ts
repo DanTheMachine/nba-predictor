@@ -47,8 +47,16 @@ describe('betting helpers', () => {
     expect(normCDF(-1)).toBeLessThan(0.5)
   })
 
-  it('finds positive value on home moneyline, spread, and over when the model is stronger than market', () => {
-    const analysis = analyzeBetting(makePrediction(), makeOdds())
+  it('finds positive value on home moneyline, spread, and over when the model is much stronger than market', () => {
+    const analysis = analyzeBetting(
+      makePrediction({
+        hScore: '120.0',
+        aScore: '106.0',
+        total: '226.0',
+        projDiff: '14.0',
+      }),
+      makeOdds(),
+    )
 
     expect(analysis.mlValueSide).toBe('home')
     expect(analysis.mlValuePct).toBeGreaterThan(0)

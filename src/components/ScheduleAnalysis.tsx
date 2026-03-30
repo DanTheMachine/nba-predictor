@@ -1,7 +1,7 @@
 import type { CSSProperties, Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 import type { UseResultsTrackerReturn } from "../hooks/useResultsTracker";
-import { buildCompositeRecommendation, createCompositeFromSim, normalizeSharpSignals } from "../lib/compositeRecommendation";
+import { buildCompositeCandidates, buildCompositeRecommendation, createCompositeFromSim, normalizeSharpSignals } from "../lib/compositeRecommendation";
 import { deriveSharpInputFromMarketData } from "../lib/sharpSignals";
 import type { analyzeBetting as AnalyzeBettingFn, mlAmerican as MlAmericanFn } from "../lib/betting";
 import type { predictGame as PredictGameFn } from "../lib/nbaModel";
@@ -476,6 +476,132 @@ function sharpStatusTone(row: ScheduleRow): { color: string; border: string; bac
   }
 }
 
+function recommendationTone(tier: "A" | "B" | "C" | "PASS"): { color: string; border: string; background: string } {
+  if (tier === "A") {
+    return { color: "#4ade80", border: "rgba(74,222,128,0.28)", background: "rgba(74,222,128,0.08)" }
+  }
+  if (tier === "B") {
+    return { color: "#fbbf24", border: "rgba(251,191,36,0.28)", background: "rgba(251,191,36,0.08)" }
+  }
+  if (tier === "C") {
+    return { color: "#93c5fd", border: "rgba(96,165,250,0.28)", background: "rgba(96,165,250,0.08)" }
+  }
+  return { color: "#7a6a3a", border: "rgba(255,200,80,0.12)", background: "rgba(255,200,80,0.03)" }
+}
+
+function compositeEdgePercent(
+  row: ScheduleRow,
+  analysis: BettingAnalysis | null,
+  market: "ML" | "SPR" | "O/U" | "PASS",
+): { value: number; label: string } {
+  if (!analysis) return { value: 0, label: "0.0%" }
+  if (market === "ML") {
+    const side = analysis.mlValueSide === "home" ? row.game.homeAbbr : analysis.mlValueSide === "away" ? row.game.awayAbbr : "PASS"
+    return { value: analysis.mlValuePct, label: `${side} +${analysis.mlValuePct.toFixed(1)}%` }
+  }
+  if (market === "SPR") {
+    return { value: analysis.spreadEdge, label: spreadEdgeLabel(row, analysis) }
+  }
+  if (market === "O/U") {
+    return { value: analysis.ouEdgePct, label: ouEdgeLabel(analysis) }
+  }
+  return { value: 0, label: "PASS" }
+}
+
+function compositePickOdds(
+  row: ScheduleRow,
+  analysis: BettingAnalysis | null,
+  market: "ML" | "SPR" | "O/U" | "PASS",
+): string {
+  const odds = row.editedOdds
+  if (!odds || !analysis) return ""
+
+  if (market === "ML") {
+    if (analysis.mlValueSide === "home") return formatSignedOdds(odds.homeMoneyline)
+    if (analysis.mlValueSide === "away") return formatSignedOdds(odds.awayMoneyline)
+    return ""
+  }
+
+  if (market === "SPR") {
+    if (analysis.spreadRec.startsWith("home")) return formatSignedOdds(odds.spreadHomeOdds)
+    if (analysis.spreadRec.startsWith("away")) return formatSignedOdds(odds.spreadAwayOdds)
+    return ""
+  }
+
+  if (market === "O/U") {
+    if (analysis.ouRec === "over") return formatSignedOdds(odds.overOdds)
+    if (analysis.ouRec === "under") return formatSignedOdds(odds.underOdds)
+    return ""
+  }
+
+  return ""
+}
+
+function compositeProjectionDetail(
+  row: ScheduleRow,
+  analysis: BettingAnalysis | null,
+  market: "ML" | "SPR" | "O/U" | "PASS",
+): string {
+  const sim = row.simResult
+  if (!sim || !analysis) return ""
+
+  if (market === "ML") {
+    if (analysis.mlValueSide === "home") return `${row.game.homeAbbr} win ${ (sim.hWinProb * 100).toFixed(1)}%`
+    if (analysis.mlValueSide === "away") return `${row.game.awayAbbr} win ${ (sim.aWinProb * 100).toFixed(1)}%`
+    return ""
+  }
+
+  if (market === "SPR") {
+    return `${row.game.homeAbbr} ${sim.hScore}-${sim.aScore} ${row.game.awayAbbr} · Diff ${Number.parseFloat(sim.projDiff) > 0 ? "+" : ""}${sim.projDiff}`
+  }
+
+  if (market === "O/U") {
+    return `${row.game.homeAbbr} ${sim.hScore}-${sim.aScore} ${row.game.awayAbbr} · Total ${sim.total}`
+  }
+
+  return ""
+}
+
+function compositeSharpDetail(row: ScheduleRow, market: "ML" | "SPR" | "O/U" | "PASS"): string {
+  const sharp = row.sharpContext
+  if (!sharp || !row.sharpInput) return "No Sharp Information"
+
+  if (market === "ML") {
+    const parts = [
+      sharp.homeMoneylineMove != null ? `ML move ${formatSignedNumber(sharp.homeMoneylineMove * 100)} pts` : null,
+      sharp.moneylineHomeSplitGap != null ? `ML gap ${formatPercentGap(sharp.moneylineHomeSplitGap)}` : null,
+      row.sharpInput.consensusMoneyline && row.sharpInput.consensusMoneyline !== "none"
+        ? `Consensus ${sharpSideLabel(row.sharpInput.consensusMoneyline, row)}`
+        : null,
+    ].filter(Boolean)
+    return parts[0] ?? "No Sharp Information"
+  }
+
+  if (market === "SPR") {
+    const parts = [
+      sharp.spreadMove != null ? `Spread move ${formatSignedNumber(sharp.spreadMove)}` : null,
+      sharp.spreadHomeSplitGap != null ? `Spread gap ${formatPercentGap(sharp.spreadHomeSplitGap)}` : null,
+      row.sharpInput.consensusSpread && row.sharpInput.consensusSpread !== "none"
+        ? `Consensus ${sharpSideLabel(row.sharpInput.consensusSpread, row)}`
+        : null,
+    ].filter(Boolean)
+    return parts[0] ?? "No Sharp Information"
+  }
+
+  if (market === "O/U") {
+    const parts = [
+      sharp.totalMove != null ? `Total move ${formatSignedNumber(sharp.totalMove)}` : null,
+      sharp.totalOverSplitGap != null ? `Total gap ${formatPercentGap(sharp.totalOverSplitGap)}` : null,
+      row.sharpInput.consensusTotal && row.sharpInput.consensusTotal !== "none"
+        ? `Consensus ${sharpTotalLabel(row.sharpInput.consensusTotal)}`
+        : null,
+    ].filter(Boolean)
+    return parts[0] ?? "No Sharp Information"
+  }
+
+  return "No Sharp Information"
+}
+
 function modelSideForSignal(
   signal: MarketSignalScore,
   row: ScheduleRow,
@@ -583,6 +709,26 @@ export default function ScheduleAnalysis({
   const liveSharpCount = linesRows.filter((row) => row.sharpInput?.source && row.sharpInput.source !== "manual").length
   const manualSharpCount = linesRows.filter((row) => row.sharpInput?.source === "manual").length
   const marketReadyCount = linesRows.filter((row) => row.marketData?.current).length
+  const bestBetRows = useMemo(
+    () =>
+      enrichedRows
+        .flatMap((entry) =>
+          buildCompositeCandidates(entry.row, entry.analysis)
+            .filter((candidate) => !candidate.pass)
+            .map((candidate) => ({
+              row: entry.row,
+              analysis: entry.analysis,
+              composite: candidate,
+              bestEdge: compositeEdgePercent(entry.row, entry.analysis, candidate.primaryMarket),
+              pickOdds: compositePickOdds(entry.row, entry.analysis, candidate.primaryMarket),
+              projectionDetail: compositeProjectionDetail(entry.row, entry.analysis, candidate.primaryMarket),
+              sharpDetail: compositeSharpDetail(entry.row, candidate.primaryMarket),
+            })),
+        )
+        .sort((a, b) => b.bestEdge.value - a.bestEdge.value)
+        .slice(0, 5),
+    [enrichedRows],
+  )
 
   const refreshLiveSharp = (): void => {
     setLinesRows((prev) => prev.map((currentRow) => {
@@ -1289,6 +1435,59 @@ export default function ScheduleAnalysis({
               </div>
             )
           })}
+
+          {hasSimResults && (
+            <div style={{ background:"linear-gradient(180deg,rgba(255,200,80,0.06),rgba(15,8,0,0.96))", border:"1px solid rgba(255,200,80,0.16)", borderRadius:8, padding:14, boxShadow:"inset 0 0 0 1px rgba(255,200,80,0.04)" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap", marginBottom:10 }}>
+                <div>
+                  <div style={{ fontSize:10, color:"#f8e7b4", fontWeight:700, letterSpacing:2 }}>BEST BETS SUMMARY</div>
+                  <div style={{ fontSize:10, color:"#7a6a3a", marginTop:4 }}>Top playable recommendations ranked by edge percentage.</div>
+                </div>
+                <div style={{ fontSize:9, color:"#9a8a5a", fontFamily:"monospace" }}>
+                  {bestBetRows.length ? `${bestBetRows.length} playable pick${bestBetRows.length === 1 ? "" : "s"}` : "No playable picks yet"}
+                </div>
+              </div>
+
+              {bestBetRows.length ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {bestBetRows.map(({ row, composite, bestEdge, pickOdds, projectionDetail, sharpDetail }, index) => {
+                    const tone = recommendationTone(composite.tier)
+                    return (
+                      <div key={`best-bet-${row.game.homeAbbr}-${row.game.awayAbbr}-${composite.pick}`} style={{ display:"grid", gridTemplateColumns:"auto 1.3fr 1.2fr auto", gap:12, alignItems:"center", background:tone.background, border:`1px solid ${tone.border}`, borderRadius:6, padding:"10px 12px" }}>
+                        <div style={{ fontSize:16, color:tone.color, fontWeight:700, fontFamily:"'Oswald',monospace" }}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div style={{ fontSize:9, color:"#e8d5a0", fontWeight:700, letterSpacing:1.3, marginBottom:4 }}>{row.game.awayAbbr} at {row.game.homeAbbr}</div>
+                          <div style={{ fontSize:13, color:tone.color, fontWeight:700, fontFamily:"'Oswald',monospace" }}>{composite.pick}</div>
+                        </div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                          <div style={{ fontSize:8, color:tone.color, border:`1px solid ${tone.border}`, background:"rgba(0,0,0,0.16)", borderRadius:999, padding:"2px 7px", fontWeight:700, letterSpacing:1.2, alignSelf:"flex-start" }}>
+                            Tier {composite.tier} - {composite.score}
+                          </div>
+                          {projectionDetail ? (
+                            <div style={{ fontSize:9, color:"#c9b27a" }}>
+                              {projectionDetail}
+                            </div>
+                          ) : null}
+                          <div style={{ fontSize:9, color:"#9a8a5a" }}>{sharpDetail}</div>
+                        </div>
+                        <div style={{ textAlign:"right" }}>
+                          <div style={{ fontSize:16, color:tone.color, fontWeight:700, fontFamily:"'Oswald',monospace" }}>
+                            {bestEdge.value > 0 ? "+" : ""}{bestEdge.value.toFixed(1)}%
+                          </div>
+                          <div style={{ fontSize:9, color:"#c9b27a", marginTop:2 }}>{row.game.awayAbbr} at {row.game.homeAbbr}</div>
+                          <div style={{ fontSize:9, color:"#c9b27a", marginTop:2 }}>{pickOdds ? `${composite.pick} (${pickOdds})` : composite.pick}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize:10, color:"#6a5a3a" }}>Run sims with odds loaded to populate the shortlist. If everything grades out as a pass, the summary will stay empty.</div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

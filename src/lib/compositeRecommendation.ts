@@ -192,6 +192,60 @@ function tierFromScore(score: number): CompositeRecommendation['tier'] {
   return 'PASS'
 }
 
+export function buildCompositeCandidates(
+  row: ScheduleRow,
+  analysis: BettingAnalysis | null,
+): CompositeRecommendation[] {
+  if (!analysis || !row.editedOdds) {
+    return []
+  }
+
+  const candidates = candidateFromAnalysis(row, analysis)
+  if (!candidates.length) {
+    return []
+  }
+
+  return candidates
+    .map((candidate) => {
+      const modelStrength = Math.min(60, candidate.modelStrength * 3.2)
+      const sharp = row.sharpInput
+      let sharpStrength = 0
+
+      sharpStrength += scoreLineMove(candidate.side, sharp, row.editedOdds as OddsInput)
+      if (candidate.market === 'ML') {
+        sharpStrength += scoreSplit(row.sharpContext?.moneylineHomeSplitGap, candidate.side === 'home')
+      } else if (candidate.market === 'SPR') {
+        sharpStrength += scoreSplit(row.sharpContext?.spreadHomeSplitGap, candidate.side === 'home')
+      } else {
+        sharpStrength += scoreSplit(row.sharpContext?.totalOverSplitGap, candidate.side === 'over')
+      }
+      sharpStrength += scoreLean(candidate.side, sharp?.clvLean, 5)
+      sharpStrength += scoreLean(candidate.side, sharp?.steamMoveLean, 5)
+      sharpStrength += scoreLean(candidate.side, sharp?.reverseLineMoveLean, 5)
+      sharpStrength += scoreConsensus(candidate.market, candidate.side, sharp)
+
+      const score = Math.max(0, Math.min(99, Math.round(modelStrength + 40 + sharpStrength)))
+      const reasons: string[] = [`Model edge ${candidate.modelStrength.toFixed(1)}% on ${candidate.pick}`]
+      if (sharpStrength > 0) reasons.push(`Sharp signals add ${sharpStrength} pts of support`)
+      if (sharpStrength < 0) reasons.push(`Sharp signals conflict by ${Math.abs(sharpStrength)} pts`)
+      if (!row.sharpInput) reasons.push('No sharp data loaded yet')
+
+      const tier = tierFromScore(score)
+
+      return {
+        primaryMarket: candidate.market,
+        pick: candidate.pick,
+        score,
+        tier,
+        pass: false,
+        reasons,
+        modelStrength: Number(candidate.modelStrength.toFixed(1)),
+        sharpStrength,
+      } satisfies CompositeRecommendation
+    })
+    .sort((a, b) => b.score - a.score)
+}
+
 export function buildCompositeRecommendation(
   row: ScheduleRow,
   analysis: BettingAnalysis | null,
@@ -209,8 +263,8 @@ export function buildCompositeRecommendation(
     }
   }
 
-  const candidates = candidateFromAnalysis(row, analysis)
-  if (!candidates.length) {
+  const scored = buildCompositeCandidates(row, analysis)
+  if (!scored.length) {
     return {
       primaryMarket: 'PASS',
       pick: 'PASS',
@@ -223,39 +277,7 @@ export function buildCompositeRecommendation(
     }
   }
 
-  const scored = candidates.map((candidate) => {
-    const modelStrength = Math.min(60, candidate.modelStrength * 3.2)
-    const sharp = row.sharpInput
-    let sharpStrength = 0
-
-    sharpStrength += scoreLineMove(candidate.side, sharp, row.editedOdds as OddsInput)
-    if (candidate.market === 'ML') {
-      sharpStrength += scoreSplit(row.sharpContext?.moneylineHomeSplitGap, candidate.side === 'home')
-    } else if (candidate.market === 'SPR') {
-      sharpStrength += scoreSplit(row.sharpContext?.spreadHomeSplitGap, candidate.side === 'home')
-    } else {
-      sharpStrength += scoreSplit(row.sharpContext?.totalOverSplitGap, candidate.side === 'over')
-    }
-    sharpStrength += scoreLean(candidate.side, sharp?.clvLean, 5)
-    sharpStrength += scoreLean(candidate.side, sharp?.steamMoveLean, 5)
-    sharpStrength += scoreLean(candidate.side, sharp?.reverseLineMoveLean, 5)
-    sharpStrength += scoreConsensus(candidate.market, candidate.side, sharp)
-
-    const score = Math.max(0, Math.min(99, Math.round(modelStrength + 40 + sharpStrength)))
-    const reasons: string[] = [`Model edge ${candidate.modelStrength.toFixed(1)}% on ${candidate.pick}`]
-    if (sharpStrength > 0) reasons.push(`Sharp signals add ${sharpStrength} pts of support`)
-    if (sharpStrength < 0) reasons.push(`Sharp signals conflict by ${Math.abs(sharpStrength)} pts`)
-    if (!row.sharpInput) reasons.push('No sharp data loaded yet')
-
-    return {
-      ...candidate,
-      score,
-      sharpStrength,
-      reasons,
-    }
-  })
-
-  const best = scored.sort((a, b) => b.score - a.score)[0]
+  const best = scored[0]
   if (!best) {
     return {
       primaryMarket: 'PASS',
@@ -272,7 +294,7 @@ export function buildCompositeRecommendation(
   const pass = tier === 'PASS'
 
   return {
-    primaryMarket: pass ? 'PASS' : best.market,
+    primaryMarket: pass ? 'PASS' : best.primaryMarket,
     pick: pass ? 'PASS' : best.pick,
     score: best.score,
     tier,

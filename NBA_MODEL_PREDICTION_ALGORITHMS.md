@@ -14,6 +14,7 @@ The core engine currently lives in:
 
 - [nbaModel.ts](C:\projects\game_sims\nba-predictor\src\lib\nbaModel.ts)
 - [betting.ts](C:\projects\game_sims\nba-predictor\src\lib\betting.ts)
+- [compositeRecommendation.ts](C:\projects\game_sims\nba-predictor\src\lib\compositeRecommendation.ts)
 
 The predictor workflow around that engine is now split across:
 
@@ -171,6 +172,15 @@ Final projected scores:
 
 The model returns projected scores rounded to one decimal place.
 
+The current display layer now also keeps:
+
+- `hScore`
+- `aScore`
+- `total`
+- `projDiff`
+
+internally consistent after rounding, so the visible team scores add up to the visible projected total.
+
 ## 3. Win Probability
 
 After projected points are created, the model converts them into a home win probability.
@@ -310,8 +320,8 @@ The Money Line comparison lives in `analyzeBetting(...)`.
 
 ### 8.2 Recommendation rule
 
-- bet `home` if `homeEdge > 2.5%`
-- bet `away` if `awayEdge > 2.5%`
+- bet `home` if `homeEdge > 4.0%`
+- bet `away` if `awayEdge > 4.0%`
 - otherwise `none`
 
 Displayed value:
@@ -350,8 +360,8 @@ Then it maps those back to:
 
 After vig removal on spread prices:
 
-- bet the `home` spread side if edge exceeds `3.0%`
-- bet the `away` spread side if edge exceeds `3.0%`
+- bet the `home` spread side if edge exceeds `5.0%`
+- bet the `away` spread side if edge exceeds `5.0%`
 - otherwise `pass`
 
 Displayed value:
@@ -371,8 +381,8 @@ The model compares:
 
 ### 10.2 Recommendation rule
 
-- `over` if `ouEdge > 2.0`
-- `under` if `ouEdge < -2.0`
+- `over` if `ouEdge > 3.0`
+- `under` if `ouEdge < -3.0`
 - `pass` otherwise
 
 ### 10.3 Probability-based total edge
@@ -409,6 +419,35 @@ Examples:
 Spread and total Kelly use the same edge-over-price structure after vig removal.
 
 If an edge is negative, Kelly is `0`.
+
+## 11.5 Composite ranking and best-bets behavior
+
+The daily-slate UI now also uses a composite ranking layer in:
+
+- [compositeRecommendation.ts](C:\projects\game_sims\nba-predictor\src\lib\compositeRecommendation.ts)
+
+This layer does not create the raw `ML`, `SPR`, or `O/U` recommendations. Instead, it scores playable candidates after they already exist.
+
+Important distinction:
+
+- raw recommendations come from `analyzeBetting(...)` thresholds
+- composite `score` and `tier` are a heuristic rank / strength layer
+- they are not calibrated win probabilities or true confidence percentages
+
+Composite score currently blends:
+
+- model strength
+- sharp line-move / split / consensus support or conflict
+- a fixed baseline
+
+Tier mapping:
+
+- `A` = `80+`
+- `B` = `68-79`
+- `C` = `55-67`
+- `PASS` = below `55`
+
+The `BEST BETS SUMMARY` card now ranks all playable market candidates across the slate by edge percentage, rather than only one composite winner per game.
 
 ## 12. CSV Export Logic
 
@@ -626,6 +665,7 @@ The current refactor also added targeted coverage around the extracted predictio
 Important tests now include:
 
 - [betting.test.ts](C:\projects\game_sims\nba-predictor\src\lib\betting.test.ts)
+- [compositeRecommendation.test.ts](C:\projects\game_sims\nba-predictor\src\lib\compositeRecommendation.test.ts)
 - [bulkOddsParser.test.ts](C:\projects\game_sims\nba-predictor\src\lib\bulkOddsParser.test.ts)
 - [usePredictorState.test.ts](C:\projects\game_sims\nba-predictor\src\hooks\usePredictorState.test.ts)
 - [useResultsTracker.test.ts](C:\projects\game_sims\nba-predictor\src\hooks\useResultsTracker.test.ts)
