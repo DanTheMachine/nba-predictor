@@ -235,17 +235,18 @@ export default function NBAModel() {
       }));
       setLinesRows(withB2B); setShowLines(true);
       const liveMarketCount = rowsWithMarketData.filter((row) => row.marketData?.current).length;
+      const separator = " | ";
       const marketStatusSuffix =
         marketDataResult.status === "available"
-          ? ` ? ${liveMarketCount} with ${marketDataResult.sourceLabel} market snapshots`
+          ? `${separator}${liveMarketCount} with ${marketDataResult.sourceLabel} market snapshots`
           : marketDataResult.status === "not_configured"
-            ? ` ? ${marketDataResult.sourceLabel} not configured`
+            ? `${separator}${marketDataResult.sourceLabel} not configured`
             : marketDataResult.status === "unsupported"
-              ? ` ? ${marketDataResult.sourceLabel} unavailable`
+              ? `${separator}${marketDataResult.sourceLabel === "No provider" ? "No market data provider selected" : `${marketDataResult.sourceLabel} unavailable`}`
               : marketDataResult.errors?.[0]
-                ? ` ? Market data warning: ${marketDataResult.errors[0]}`
+                ? `${separator}Market data warning: ${marketDataResult.errors[0]}`
                 : "";
-      setSchedStatus(`${games.length} games loaded ? ${rows.filter(r=>r.espnOdds).length} with ESPN lines${b2bSet.size>0?` ? B2B: ${[...b2bSet].join(", ")}`:" ? No B2B detected"}${marketStatusSuffix}`);
+      setSchedStatus(`${games.length} games loaded${separator}${rows.filter(r=>r.espnOdds).length} with ESPN lines${b2bSet.size>0?`${separator}B2B: ${[...b2bSet].join(", ")}`:`${separator}No B2B detected`}${marketStatusSuffix}`);
     } catch(e) { setSchedStatus("Error: " + getErrorMessage(e)); }
     setSchedLoading(false);
   };

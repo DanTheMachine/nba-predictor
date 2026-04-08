@@ -28,11 +28,13 @@ vi.mock('./components/TeamCard', () => ({
 vi.mock('./components/ScheduleAnalysis', () => ({
   default: ({
     linesRows,
+    schedStatus,
     handleExport,
     handleLoadSchedule,
     handleRunAllSims,
   }: {
     linesRows: Array<{ simResult?: unknown; sharpInput?: { source?: string | null } | null }>
+    schedStatus: string
     handleExport: () => void
     handleLoadSchedule: () => void
     handleRunAllSims: () => void
@@ -42,6 +44,7 @@ vi.mock('./components/ScheduleAnalysis', () => ({
     return (
       <div>
         <button onClick={handleLoadSchedule}>LOAD GAMES</button>
+        {schedStatus && <div>{schedStatus}</div>}
         {linesRows.some((row) => row.sharpInput?.source === 'OpticOdds') && <div>LIVE SHARP READY</div>}
         {linesRows.length > 0 && <button onClick={handleRunAllSims}>RUN ALL SIMS</button>}
         {hasSimResults && <button onClick={handleExport}>PREDICTIONS CSV</button>}
@@ -254,5 +257,13 @@ describe('NBAModel export', () => {
     expect(dataRow).toContain('"OVER 220.5"')
     expect(dataRow).toContain('"Model edge 5.1% on OVER 220.5')
     expect(dataRow).toMatch(/"\d{8}BOSLAL"/)
+  })
+
+  it('shows a readable schedule status banner after loading games', async () => {
+    render(<NBAModel />)
+
+    fireEvent.click(screen.getAllByRole('button', { name: /load games/i })[0])
+
+    expect(await screen.findByText('1 games loaded | 1 with ESPN lines | No B2B detected | 1 with OpticOdds market snapshots')).toBeInTheDocument()
   })
 })
