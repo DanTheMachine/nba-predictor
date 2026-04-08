@@ -262,7 +262,10 @@ describe('NBAModel export', () => {
   it('shows a readable schedule status banner after loading games', async () => {
     render(<NBAModel />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: /load games/i })[0])
+    const loadGamesButton = screen.getAllByRole('button', { name: /load games/i })[0]
+    if (!loadGamesButton) throw new Error('Expected at least one LOAD GAMES button')
+
+    fireEvent.click(loadGamesButton)
 
     expect(await screen.findByText('1 games loaded | 1 with ESPN lines | No B2B detected | 1 with OpticOdds market snapshots')).toBeInTheDocument()
   })
