@@ -331,6 +331,49 @@ describe('ScheduleAnalysis', () => {
     cleanup()
   })
 
+  it('shows the results csv button even before games are loaded', () => {
+    const handleFetchResults = vi.fn()
+
+    render(
+      <ScheduleAnalysis
+        card={{}}
+        analyzeBetting={() => analysis}
+        mlAmerican={(probability) => (probability >= 0.5 ? '-163' : '+163')}
+        predictGame={() => prediction}
+        liveStats={liveStats}
+        TEAMS={teams}
+        showBulkImport={false}
+        setShowBulkImport={vi.fn()}
+        bulkError=""
+        bulkStatus=""
+        bulkPaste=""
+        setBulkPaste={vi.fn()}
+        handleBulkImport={vi.fn()}
+        linesRows={[]}
+        setLinesRows={vi.fn()}
+        showLines={false}
+        schedStatus=""
+        schedLoading={false}
+        simsRunning={false}
+        handleLoadSchedule={vi.fn()}
+        handleRunAllSims={vi.fn()}
+        handleExport={vi.fn()}
+        handleFetchResults={handleFetchResults}
+        fetchingResults={false}
+        editingIdx={null}
+        setEditingIdx={vi.fn()}
+        editFields={baseEditFields}
+        setEditFields={vi.fn()}
+        startEdit={vi.fn()}
+        saveEdit={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'RESULTS CSV' }))
+
+    expect(handleFetchResults).toHaveBeenCalledWith(true)
+  })
+
   it('shows an EDITED badge on manually edited game cards', () => {
     renderScheduleAnalysis(makeRow())
 
