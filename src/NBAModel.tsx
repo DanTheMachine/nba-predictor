@@ -500,38 +500,43 @@ export default function NBAModel() {
   const hTeam  = liveStats[homeTeam] ? { ...TEAMS[homeTeam], ...liveStats[homeTeam] } : TEAMS[homeTeam];
   const aTeam  = liveStats[awayTeam] ? { ...TEAMS[awayTeam], ...liveStats[awayTeam] } : TEAMS[awayTeam];
 
-  const ss = { background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.15)", color:"#e8d5a0", padding:"8px 10px", borderRadius:4, fontFamily:"monospace", fontSize:12, width:"100%", cursor:"pointer" };
-  const card = { background:"rgba(255,200,80,0.03)", border:"1px solid rgba(255,200,80,0.13)", borderRadius:8, padding:16, marginBottom:12 };
+  const ss = { background:"rgba(255,255,255,0.035)", border:"1px solid rgba(255,255,255,0.08)", color:"#edf0f7", padding:"9px 11px", borderRadius:6, fontFamily:"'JetBrains Mono','Fira Code',monospace", fontSize:12, width:"100%", cursor:"pointer", outline:"none", appearance:"none" as const, WebkitAppearance:"none" as const };
+  const card = { background:"rgba(255,255,255,0.028)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:10, padding:18, marginBottom:14, boxShadow:"0 4px 24px rgba(0,0,0,0.4)" };
 
   return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(170deg,#0d0800 0%,#140e02 50%,#0d0800 100%)", color:"#e8d5a0", fontFamily:"monospace", padding:"22px 18px" }}>
+    <div style={{ minHeight:"100vh", background:"radial-gradient(ellipse at 15% 0%, rgba(180,120,10,0.07) 0%, transparent 55%), linear-gradient(160deg,#050710 0%,#07090f 45%,#050608 100%)", color:"#edf0f7", fontFamily:"'JetBrains Mono','Fira Code',monospace", padding:"26px 22px" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap');
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.15} }
-        @keyframes glint  { 0%,100%{opacity:0.75} 50%{opacity:1} }
-        select option, select optgroup { background:#1a0f00; color:#e8d5a0; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.12} }
+        @keyframes glint  { 0%,100%{background-position:0% 50%} 100%{background-position:200% 50%} }
+        select option, select optgroup { background:#0d0f17; color:#edf0f7; }
+        .nba-tab-btn { transition: color 0.18s, border-color 0.18s, background 0.18s; }
+        .nba-tab-btn:hover { color: #d4af5a !important; background: rgba(251,191,36,0.04) !important; }
+        .nba-card-btn { transition: background 0.18s, border-color 0.18s, box-shadow 0.18s; }
+        .nba-card-btn:hover { box-shadow: 0 0 0 1px rgba(251,191,36,0.3); }
       `}</style>
-      <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:100, background:"linear-gradient(90deg,#f59e0b,#fbbf24,#fde68a,#fbbf24,#f59e0b)", animation:"glint 3s ease infinite" }} />
 
-      <div style={{ maxWidth:1100, width:"100%", margin:"0 auto", boxSizing:"border-box", overflowX:"hidden" }}>
+      {/* ── Top accent bar ── */}
+      <div style={{ position:"fixed", top:0, left:0, right:0, height:2, zIndex:100, background:"linear-gradient(90deg, transparent, #b45309 15%, #fbbf24 40%, #fde68a 50%, #fbbf24 60%, #b45309 85%, transparent)", backgroundSize:"200% 100%", animation:"glint 4s linear infinite" }} />
+
+      <div style={{ maxWidth:1120, width:"100%", margin:"0 auto", boxSizing:"border-box" as const, overflowX:"hidden" as const }}>
 
         {/* ── Header ── */}
-        <div style={{ marginBottom:20, paddingTop:6 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-            <div style={{ width:9, height:9, borderRadius:"50%", background:"#fbbf24", boxShadow:"0 0 12px #fbbf24", animation:"pulse 2s infinite" }} />
-            <span style={{ fontSize:10, color:"#fbbf24", letterSpacing:5, fontFamily:"'Oswald',monospace" }}>NBA · ANALYTICS ENGINE · NET RTG / EFG MODEL</span>
+        <div style={{ marginBottom:28, paddingTop:8, animation:"fadeUp 0.4s ease both" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+            <div style={{ width:7, height:7, borderRadius:"50%", background:"#fbbf24", boxShadow:"0 0 10px #fbbf24, 0 0 20px rgba(251,191,36,0.4)", animation:"pulse 2.5s ease infinite" }} />
+            <span style={{ fontSize:10, color:"#9a7c30", letterSpacing:"0.35em", fontFamily:"'Barlow Condensed','JetBrains Mono',sans-serif", fontWeight:600 }}>NBA · ANALYTICS ENGINE · NET RTG / EFG MODEL</span>
           </div>
-          <h1 style={{ fontFamily:"'Oswald',sans-serif", fontSize:"clamp(30px,5.5vw,60px)", fontWeight:700, margin:"4px 0 2px", lineHeight:1, letterSpacing:3, color:"#e8d5a0" }}>
-            FAST BREAK <span style={{ color:"#fbbf24" }}>PREDICTOR</span>
+          <h1 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"clamp(36px,6vw,68px)", fontWeight:800, margin:"0 0 6px", lineHeight:0.95, letterSpacing:"0.03em", color:"#f0e8d0", textTransform:"uppercase" as const }}>
+            Fast Break{" "}<span style={{ color:"#fbbf24", WebkitTextStroke:"0.5px rgba(251,191,36,0.4)" }}>Predictor</span>
           </h1>
-          <p style={{ fontSize:10, color:"#6a5a2a", letterSpacing:3, margin:0 }}>OFF/DEF RATING · EFG% · NET RATING · PACE · TOV% · 100K SIMULATIONS</p>
+          <p style={{ fontSize:10, color:"#6b7a95", letterSpacing:"0.3em", margin:0, fontWeight:500 }}>OFF/DEF RATING · EFG% · NET RATING · PACE · TOV% · 100K SIMULATIONS</p>
         </div>
 
         {/* ── Tab Navigation ── */}
-        <div style={{ display:"flex", gap:0, marginBottom:20, borderBottom:"1px solid rgba(255,200,80,0.15)" }}>
-          {[["predictor","⚡ PREDICTOR"],["results","📊 RESULTS TRACKER"],["evaluation","MODEL EVAL"]].map(([id,label]) => (
-            <button key={id} onClick={()=>setActiveTab(id)} style={{ background:"transparent", border:"none", borderBottom:activeTab===id?"2px solid #fbbf24":"2px solid transparent", padding:"10px 20px", color:activeTab===id?"#fbbf24":"#5a4a2a", fontSize:11, fontWeight:700, letterSpacing:3, fontFamily:"'Oswald',monospace", cursor:"pointer", transition:"all 0.2s", marginBottom:-1 }}>
+        <div style={{ display:"flex", gap:2, marginBottom:24, borderBottom:"1px solid rgba(255,255,255,0.07)", paddingBottom:0 }}>
+          {([["predictor","⚡ PREDICTOR"],["results","📊 RESULTS"],["evaluation","MODEL EVAL"]] as [ActiveTab, string][]).map(([id,label]) => (
+            <button key={id} className="nba-tab-btn" onClick={()=>setActiveTab(id as ActiveTab)} style={{ background:activeTab===id?"rgba(251,191,36,0.07)":"transparent", border:"none", borderBottom:activeTab===id?"2px solid #fbbf24":"2px solid transparent", padding:"10px 22px", color:activeTab===id?"#fbbf24":"#6b7a95", fontSize:11, fontWeight:700, letterSpacing:"0.2em", fontFamily:"'Barlow Condensed','JetBrains Mono',sans-serif", cursor:"pointer", marginBottom:-1, borderRadius:"4px 4px 0 0" }}>
               {label}
             </button>
           ))}
@@ -540,18 +545,18 @@ export default function NBAModel() {
         {activeTab === "predictor" && <>
 
         {/* ── ESPN Colors Banner ── */}
-        <div style={{ ...card, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+        <div style={{ ...card, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap" as const, gap:12 }}>
           <div>
-            <div style={{ fontSize:10, color:"#7a6a3a", letterSpacing:3, marginBottom:5 }}>ESPN TEAM COLORS</div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:espnData?"#4ade80":"#4b5563", boxShadow:espnData?"0 0 8px #4ade80":"none", animation:espnLoading?"pulse 0.8s infinite":"none" }} />
-              <span style={{ fontSize:11, color:espnData?"#4ade80":espnLoading?"#f59e0b":"#6a5a3a" }}>
+            <div style={{ fontSize:10, color:"#6b7a95", letterSpacing:"0.28em", marginBottom:6, fontWeight:600 }}>ESPN TEAM COLORS</div>
+            <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+              <div style={{ width:7, height:7, borderRadius:"50%", background:espnData?"#34d399":"#2d3748", boxShadow:espnData?"0 0 8px #34d399, 0 0 16px rgba(52,211,153,0.3)":"none", animation:espnLoading?"pulse 0.8s ease infinite":"none", flexShrink:0 }} />
+              <span style={{ fontSize:11, color:espnData?"#34d399":espnLoading?"#f59e0b":"#6b7a95" }}>
                 {espnLoading ? espnStatus : espnData ? espnStatus : "Load ESPN colors for team-colored UI elements"}
               </span>
             </div>
-            {espnError && <div style={{ fontSize:10, color:"#f87171", marginTop:4 }}>⚠ {espnError}</div>}
+            {espnError && <div style={{ fontSize:10, color:"#fb7185", marginTop:5 }}>⚠ {espnError}</div>}
           </div>
-          <button onClick={handleFetchESPN} disabled={espnLoading} style={{ background:espnData?"rgba(74,222,128,0.07)":"linear-gradient(135deg,#b45309,#92400e)", border:espnData?"1px solid rgba(74,222,128,0.2)":"none", borderRadius:4, padding:"8px 16px", color:espnData?"#4ade80":"#fef3c7", fontSize:11, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:espnLoading?"not-allowed":"pointer", whiteSpace:"nowrap" }}>
+          <button className="nba-card-btn" onClick={handleFetchESPN} disabled={espnLoading} style={{ background:espnData?"rgba(52,211,153,0.07)":"rgba(180,83,9,0.25)", border:espnData?"1px solid rgba(52,211,153,0.2)":"1px solid rgba(180,83,9,0.4)", borderRadius:6, padding:"8px 18px", color:espnData?"#34d399":"#fde68a", fontSize:11, fontWeight:700, letterSpacing:"0.15em", fontFamily:"'Barlow Condensed',sans-serif", cursor:espnLoading?"not-allowed":"pointer", whiteSpace:"nowrap" as const, opacity:espnLoading?0.6:1 }}>
             {espnLoading?"LOADING…":espnData?"↻ REFRESH":"⬇ FETCH COLORS"}
           </button>
         </div>
@@ -578,10 +583,10 @@ export default function NBAModel() {
 
         <div style={{ ...card, display:"none", alignItems:"center", justifyContent:"space-between", gap:12 }}>
           <div>
-            <div style={{ fontSize:10, color:"#7a6a3a", letterSpacing:3, marginBottom:4 }}>SINGLE GAME TOOLS</div>
-            <div style={{ fontSize:11, color:"#6a5a3a" }}>Home/away setup, single-game sim, and manual lines</div>
+            <div style={{ fontSize:10, color:"#6b7a95", letterSpacing:"0.28em", marginBottom:4, fontWeight:600 }}>SINGLE GAME TOOLS</div>
+            <div style={{ fontSize:11, color:"#6b7a95" }}>Home/away setup, single-game sim, and manual lines</div>
           </div>
-          <button onClick={()=>setShowSingleGameTools(v=>!v)} style={{ background:showSingleGameTools?"rgba(202,138,4,0.15)":"rgba(255,200,80,0.04)", border:`1px solid ${showSingleGameTools?"rgba(234,179,8,0.4)":"rgba(255,200,80,0.13)"}`, borderRadius:4, padding:"8px 16px", color:showSingleGameTools?"#fbbf24":"#9a8a5a", fontSize:11, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
+          <button className="nba-card-btn" onClick={()=>setShowSingleGameTools(v=>!v)} style={{ background:showSingleGameTools?"rgba(251,191,36,0.1)":"rgba(255,255,255,0.04)", border:`1px solid ${showSingleGameTools?"rgba(251,191,36,0.35)":"rgba(255,255,255,0.08)"}`, borderRadius:6, padding:"8px 18px", color:showSingleGameTools?"#fbbf24":"#6a7a95", fontSize:11, fontWeight:700, letterSpacing:"0.15em", fontFamily:"'Barlow Condensed',sans-serif", cursor:"pointer", whiteSpace:"nowrap" as const }}>
             {showSingleGameTools ? "CLOSE PANEL" : "OPEN PANEL"}
           </button>
         </div>
@@ -693,10 +698,10 @@ export default function NBAModel() {
 
         <div style={{ ...card, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
           <div>
-            <div style={{ fontSize:10, color:"#7a6a3a", letterSpacing:3, marginBottom:4 }}>SINGLE GAME TOOLS</div>
-            <div style={{ fontSize:11, color:"#6a5a3a" }}>Home/away setup, single-game sim, and manual lines</div>
+            <div style={{ fontSize:10, color:"#6b7a95", letterSpacing:"0.28em", marginBottom:4, fontWeight:600 }}>SINGLE GAME TOOLS</div>
+            <div style={{ fontSize:11, color:"#6b7a95" }}>Home/away setup, single-game sim, and manual lines</div>
           </div>
-          <button onClick={()=>setShowSingleGameTools(v=>!v)} style={{ background:showSingleGameTools?"rgba(202,138,4,0.15)":"rgba(255,200,80,0.04)", border:`1px solid ${showSingleGameTools?"rgba(234,179,8,0.4)":"rgba(255,200,80,0.13)"}`, borderRadius:4, padding:"8px 16px", color:showSingleGameTools?"#fbbf24":"#9a8a5a", fontSize:11, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
+          <button className="nba-card-btn" onClick={()=>setShowSingleGameTools(v=>!v)} style={{ background:showSingleGameTools?"rgba(251,191,36,0.1)":"rgba(255,255,255,0.04)", border:`1px solid ${showSingleGameTools?"rgba(251,191,36,0.35)":"rgba(255,255,255,0.08)"}`, borderRadius:6, padding:"8px 18px", color:showSingleGameTools?"#fbbf24":"#6a7a95", fontSize:11, fontWeight:700, letterSpacing:"0.15em", fontFamily:"'Barlow Condensed',sans-serif", cursor:"pointer", whiteSpace:"nowrap" as const }}>
             {showSingleGameTools ? "CLOSE PANEL" : "OPEN SINGLE GAME"}
           </button>
         </div>

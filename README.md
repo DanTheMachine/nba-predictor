@@ -1,16 +1,69 @@
-# React + Vite
+# Fast Break Predictor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+NBA game prediction and betting analysis tool. Runs Monte Carlo simulations against live team stats and sportsbook lines to produce model-vs-market edges across moneyline, spread, and over/under markets.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19 + TypeScript + Vite
+- Express proxy server (ESPN API, odds, results)
+- Vitest (unit/component tests) + Playwright (e2e)
 
-## React Compiler
+## Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# Terminal 1 — proxy server
+npm run proxy
 
-## Expanding the ESLint configuration
+# Terminal 2 — dev app
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Open [http://localhost:5173](http://localhost:5173) (Vite may choose a different port — check terminal output).
+
+See [RUNNING_THE_NBA_MODEL.md](RUNNING_THE_NBA_MODEL.md) for the full daily workflow.
+
+## Daily Workflow
+
+1. **FETCH ESPN** — load team colors
+2. **IMPORT STATS** — paste Basketball Reference advanced stats
+3. **LOAD GAMES** — pull today's slate with odds, injuries, starters, form
+4. Paste/edit lines if needed (`BULK EDIT LINES` or per-game `EDIT ODDS`)
+5. **RUN ALL SIMS** — run 100k simulations per matchup
+6. **PREDICTIONS CSV** — export predictions
+7. Next day: **RESULTS CSV** → import both into the Results or Model Eval tab
+
+## Commands
+
+```bash
+npm run dev          # start Vite dev server
+npm run proxy        # start Express proxy
+npm run build        # production build
+npm run lint         # ESLint
+npm run typecheck    # TypeScript check
+npm run test         # Vitest (unit + component)
+npm run test:watch   # Vitest watch mode
+npm run test:e2e     # Playwright e2e
+```
+
+## Project Structure
+
+```
+src/
+  NBAModel.tsx              # main coordinator component
+  components/
+    ScheduleAnalysis.tsx    # today's games, bulk import, export
+    SingleGameControls.tsx  # single-game matchup setup
+    SingleGameResults.tsx   # single-game prediction output
+    BBRefImportPanel.tsx    # Basketball Reference stats import
+    ModelEvaluation.tsx     # post-bet grading and ROI
+    ResultsTracker.tsx      # in-app results log
+  hooks/
+    usePredictorState.ts    # single-game sim state
+    useResultsTracker.ts    # results grading state
+  lib/
+    nbaModel.ts             # core simulation and team data
+    betting.ts              # edge, Kelly, moneyline math
+    espn.ts                 # ESPN API helpers
+    compositeRecommendation.ts
+proxy.ts                    # local Express proxy server
+```

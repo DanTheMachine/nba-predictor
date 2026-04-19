@@ -26,14 +26,14 @@ export default function TeamCard({ abbr, side, espnData, liveStats }: TeamCardPr
           ["AST%",`${s.astPct.toFixed(1)}%`],["PACE",s.pace.toFixed(1)],["3PA%",`${s.threePAr.toFixed(1)}%`]
         ].map(([l,v]) => (
           <div key={l}>
-            <div style={{ fontSize:9, color:"#7a6a3a", letterSpacing:1 }}>{l}</div>
+            <div style={{ fontSize:9, color:"#9aaabb", letterSpacing:1 }}>{l}</div>
             <div style={{ fontSize:13, fontWeight:700, color:"#e8d5a0", fontFamily:"monospace" }}>{v}</div>
           </div>
         ))}
       </div>
       {live && <div style={{ marginTop:7, fontSize:9, color:"#5a9a6a", fontFamily:"monospace" }}>Updated: {live.lastUpdated}</div>}
       <div style={{ marginTop:live?4:7 }}>
-        <span style={{ fontSize:10, padding:"2px 6px", borderRadius:2, background:"rgba(255,200,80,0.06)", color:"#7a6a3a" }}>{base.arena}</span>
+        <span style={{ fontSize:10, padding:"2px 6px", borderRadius:2, background:"rgba(255,200,80,0.06)", color:"#9aaabb" }}>{base.arena}</span>
       </div>
     </div>
   );

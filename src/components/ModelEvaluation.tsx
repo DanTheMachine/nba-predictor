@@ -35,15 +35,15 @@ function SummaryCard({
         padding: '14px 16px',
       }}
     >
-      <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 3, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 9, color: '#9aaabb', letterSpacing: 3, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 700, color: '#e8d5a0', fontFamily: "'Oswald',monospace", lineHeight: 1 }}>
         {summary.wins}-{summary.losses}
       </div>
-      <div style={{ fontSize: 10, color: '#9a8a5a', marginTop: 4 }}>
+      <div style={{ fontSize: 10, color: '#a8b8cc', marginTop: 4 }}>
         {summary.totalBets} bets | {summary.winPct}% | Units {summary.roiUnits >= 0 ? '+' : ''}
         {summary.roiUnits.toFixed(2)}u
       </div>
-      <div style={{ fontSize: 9, color: '#5a4a2a', marginTop: 4 }}>
+      <div style={{ fontSize: 9, color: '#7a8ab2', marginTop: 4 }}>
         ROI {summary.roiPct == null ? '-' : `${summary.roiPct >= 0 ? '+' : ''}${summary.roiPct.toFixed(1)}%`} | Push {summary.pushes} | Pending {summary.pending}
       </div>
     </div>
@@ -52,7 +52,7 @@ function SummaryCard({
 
 function DetailLine({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: '#9a8a5a' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: '#a8b8cc' }}>
       <span>{label}</span>
       <span style={{ color: '#e8d5a0', whiteSpace: 'nowrap' }}>{value}</span>
     </div>
@@ -69,7 +69,7 @@ function DetailValueLine({
   valueColor?: string
 }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: '#9a8a5a' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: '#a8b8cc' }}>
       <span>{label}</span>
       <span style={{ color: valueColor ?? '#e8d5a0', whiteSpace: 'nowrap' }}>{value}</span>
     </div>
@@ -80,14 +80,14 @@ function MarketBreakdownCard({ market }: { market: EvaluationReport['markets'][n
   return (
     <div style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.13)', borderRadius: 8, padding: '14px 16px' }}>
       <div style={{ fontSize: 10, color: '#fbbf24', letterSpacing: 3, marginBottom: 10 }}>{market.label}</div>
-      <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 2, marginBottom: 6 }}>MODEL BETS</div>
+      <div style={{ fontSize: 9, color: '#9aaabb', letterSpacing: 2, marginBottom: 6 }}>MODEL BETS</div>
       <DetailLine label="Bets" value={String(market.all.totalBets)} />
       <DetailLine label="Record" value={`${market.all.wins}-${market.all.losses}-${market.all.pushes}`} />
       <DetailLine label="Hit rate" value={`${market.all.winPct}%`} />
       <DetailValueLine label="Units" value={`${market.all.roiUnits >= 0 ? '+' : ''}${market.all.roiUnits.toFixed(2)}u`} valueColor={metricColor(market.all.roiUnits)} />
       <DetailValueLine label="ROI" value={market.all.roiPct == null ? '-' : `${market.all.roiPct >= 0 ? '+' : ''}${market.all.roiPct.toFixed(1)}%`} valueColor={metricColor(market.all.roiPct)} />
       <div style={{ height: 1, background: 'rgba(255,200,80,0.08)', margin: '10px 0' }} />
-      <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 2, marginBottom: 6 }}>ACTUAL BETS</div>
+      <div style={{ fontSize: 9, color: '#9aaabb', letterSpacing: 2, marginBottom: 6 }}>ACTUAL BETS</div>
       <DetailLine label="Bets" value={String(market.actual.totalBets)} />
       <DetailLine label="Record" value={`${market.actual.wins}-${market.actual.losses}-${market.actual.pushes}`} />
       <DetailLine label="Hit rate" value={`${market.actual.winPct}%`} />
@@ -129,13 +129,13 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
   return (
     <div style={{ animation: 'fadeUp 0.2s ease' }}>
       <div style={{ ...card, marginBottom: 14 }}>
-        <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 8 }}>MODEL EVALUATION</div>
-        <div style={{ fontSize: 11, color: '#6a5a3a', lineHeight: 1.8, marginBottom: 12 }}>
+        <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 8 }}>MODEL EVALUATION</div>
+        <div style={{ fontSize: 11, color: '#8a97b5', lineHeight: 1.8, marginBottom: 12 }}>
           Paste a predictions CSV and a results CSV to grade all recommended moneyline, spread, and total bets using the exported market odds.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
           <div>
-            <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 2, marginBottom: 6 }}>PREDICTIONS CSV</div>
+            <div style={{ fontSize: 9, color: '#9aaabb', letterSpacing: 2, marginBottom: 6 }}>PREDICTIONS CSV</div>
             <textarea
               value={predictionsPaste}
               onChange={(event) => setPredictionsPaste(event.target.value)}
@@ -156,7 +156,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
             />
           </div>
           <div>
-            <div style={{ fontSize: 9, color: '#7a6a3a', letterSpacing: 2, marginBottom: 6 }}>RESULTS CSV</div>
+            <div style={{ fontSize: 9, color: '#9aaabb', letterSpacing: 2, marginBottom: 6 }}>RESULTS CSV</div>
             <textarea
               value={resultsPaste}
               onChange={(event) => setResultsPaste(event.target.value)}
@@ -186,7 +186,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
               border: predictionsPaste.trim() && resultsPaste.trim() ? 'none' : '1px solid rgba(255,200,80,0.08)',
               borderRadius: 4,
               padding: '8px 16px',
-              color: predictionsPaste.trim() && resultsPaste.trim() ? '#1a1200' : '#4a3a2a',
+              color: predictionsPaste.trim() && resultsPaste.trim() ? '#1a1200' : '#6b7a95',
               fontSize: 10,
               fontWeight: 700,
               letterSpacing: 2,
@@ -209,7 +209,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
               border: '1px solid rgba(255,200,80,0.15)',
               borderRadius: 4,
               padding: '8px 14px',
-              color: '#6a5a3a',
+              color: '#8a97b5',
               fontSize: 10,
               fontFamily: 'monospace',
               cursor: 'pointer',
@@ -231,7 +231,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
           </div>
 
           <div style={{ ...card, marginBottom: 14 }}>
-            <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>ROI BY MARKET</div>
+            <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 10 }}>ROI BY MARKET</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
               {report.markets.map((market) => (
                 <MarketBreakdownCard key={market.label} market={market} />
@@ -241,7 +241,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div style={card}>
-              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>EDGE THRESHOLDS</div>
+              <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 10 }}>EDGE THRESHOLDS</div>
               <div style={{ display: 'grid', gap: 8 }}>
                 {report.edgeThresholds.map((bucket) => (
                   <div key={bucket.label} style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
@@ -258,7 +258,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
             </div>
 
             <div style={card}>
-              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>CALIBRATION</div>
+              <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 10 }}>CALIBRATION</div>
               <div style={{ display: 'grid', gap: 8 }}>
                 {report.calibration.map((bucket) => (
                   <div key={bucket.label} style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 0.9fr 1fr', gap: 8, fontSize: 10, background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
@@ -274,7 +274,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div style={card}>
-              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>O/U CALIBRATION</div>
+              <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 10 }}>O/U CALIBRATION</div>
               <div style={{ display: 'grid', gap: 8 }}>
                 {report.totalsCalibration.map((row) => (
                   <div key={row.label} style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
@@ -282,7 +282,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
                     <DetailLine label="Games" value={String(row.games)} />
                     <DetailLine label="Avg edge" value={row.avgEdge} />
                     {row.passNote ? (
-                      <div style={{ fontSize: 10, color: '#6a5a3a', marginTop: 6 }}>{row.passNote}</div>
+                      <div style={{ fontSize: 10, color: '#8a97b5', marginTop: 6 }}>{row.passNote}</div>
                     ) : (
                       <>
                         <DetailLine label="Record" value={row.record ?? '-'} />
@@ -297,7 +297,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
             </div>
 
             <div style={card}>
-              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>O/U EDGE BUCKETS</div>
+              <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 10 }}>O/U EDGE BUCKETS</div>
               <div style={{ display: 'grid', gap: 8 }}>
                 {report.totalsEdgeBuckets.map((row) => (
                   <div key={row.label} style={{ background: 'rgba(255,200,80,0.03)', border: '1px solid rgba(255,200,80,0.08)', borderRadius: 6, padding: '10px 12px' }}>
@@ -315,7 +315,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
           </div>
 
           <div style={{ ...card }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: '#5a4a2a', letterSpacing: 3, marginBottom: 12 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#7a8ab2', letterSpacing: 3, marginBottom: 12 }}>
               BET LOG | {report.rows.length} bets | {totalSettled} settled
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -325,7 +325,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
                     {['DATE', 'MATCHUP', 'TYPE', 'REC', 'ODDS', 'RESULT', 'UNITS', 'KEY'].map((header) => (
                       <th
                         key={header}
-                        style={{ padding: '6px 8px', textAlign: 'left', fontSize: 8, color: '#5a4a2a', letterSpacing: 2, fontWeight: 700, whiteSpace: 'nowrap' }}
+                        style={{ padding: '6px 8px', textAlign: 'left', fontSize: 8, color: '#7a8ab2', letterSpacing: 2, fontWeight: 700, whiteSpace: 'nowrap' }}
                       >
                         {header}
                       </th>
@@ -335,7 +335,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
                 <tbody>
                   {report.rows.map((row, index) => {
                     const color =
-                      row.result === 'WIN' ? '#3fb950' : row.result === 'LOSS' ? '#f87171' : row.result === 'PUSH' ? '#fbbf24' : '#5a4a2a'
+                      row.result === 'WIN' ? '#3fb950' : row.result === 'LOSS' ? '#f87171' : row.result === 'PUSH' ? '#fbbf24' : '#7a8ab2'
                     return (
                       <tr
                         key={`${row.lookupKey}-${row.betType}`}
@@ -344,10 +344,10 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
                           background: index % 2 === 0 ? 'transparent' : 'rgba(255,200,80,0.015)',
                         }}
                       >
-                        <td style={{ padding: '6px 8px', color: '#7a6a3a', whiteSpace: 'nowrap' }}>{row.date}</td>
+                        <td style={{ padding: '6px 8px', color: '#9aaabb', whiteSpace: 'nowrap' }}>{row.date}</td>
                         <td style={{ padding: '6px 8px', color: '#e8d5a0', whiteSpace: 'nowrap' }}>{row.matchup}</td>
-                        <td style={{ padding: '6px 8px', color: '#9a8a5a', whiteSpace: 'nowrap' }}>{row.betType}</td>
-                        <td style={{ padding: '6px 8px', color: '#9a8a5a', whiteSpace: 'nowrap' }}>{row.recommendation}</td>
+                        <td style={{ padding: '6px 8px', color: '#a8b8cc', whiteSpace: 'nowrap' }}>{row.betType}</td>
+                        <td style={{ padding: '6px 8px', color: '#a8b8cc', whiteSpace: 'nowrap' }}>{row.recommendation}</td>
                         <td style={{ padding: '6px 8px', color: '#d4b870', whiteSpace: 'nowrap' }}>
                           {row.odds == null ? '-' : `${row.odds > 0 ? '+' : ''}${row.odds}`}
                         </td>
@@ -356,7 +356,7 @@ export default function ModelEvaluation({ card }: ModelEvaluationProps) {
                           {row.units > 0 ? '+' : ''}
                           {row.units.toFixed(2)}u
                         </td>
-                        <td style={{ padding: '6px 8px', color: '#5a4a2a', whiteSpace: 'nowrap' }}>{row.lookupKey}</td>
+                        <td style={{ padding: '6px 8px', color: '#7a8ab2', whiteSpace: 'nowrap' }}>{row.lookupKey}</td>
                       </tr>
                     )
                   })}

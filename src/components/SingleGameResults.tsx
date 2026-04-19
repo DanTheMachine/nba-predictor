@@ -98,7 +98,7 @@ export default function SingleGameResults({
       )}
 
       <div style={card}>
-        <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 12 }}>WIN PROBABILITY</div>
+        <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 12 }}>WIN PROBABILITY</div>
         <CourtBar hProb={result.hWinProb} hColor={hColor} aColor={aColor} />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10 }}>
           <span style={{ color: hColor, fontFamily: "'Oswald',monospace" }}>{hTeam.name.toUpperCase()} (HOME)</span>
@@ -107,7 +107,7 @@ export default function SingleGameResults({
       </div>
 
       <div style={card}>
-        <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 14 }}>PROJECTED SCORE</div>
+        <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 14 }}>PROJECTED SCORE</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 14 }}>
           <div>
             <div style={{ fontSize: 10, color: hColor, letterSpacing: 2, marginBottom: 3 }}>{homeTeam}</div>
@@ -115,7 +115,7 @@ export default function SingleGameResults({
           </div>
 
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: '#6a5a3a', letterSpacing: 2, marginBottom: 3 }}>TOTAL</div>
+            <div style={{ fontSize: 10, color: '#8a97b5', letterSpacing: 2, marginBottom: 3 }}>TOTAL</div>
             <div style={{ fontFamily: "'Oswald',sans-serif", fontSize: 32, color: '#fbbf24', fontWeight: 700 }}>{result.total}</div>
             {odds && totalEdge !== null && (
               <div style={{ marginTop: 6 }}>
@@ -141,7 +141,7 @@ export default function SingleGameResults({
 
             return (
               <div key={abbr} style={{ background: 'rgba(255,200,80,0.04)', border: `1px solid ${color}28`, borderRadius: 6, padding: '10px 12px' }}>
-                <div style={{ fontSize: 10, color: '#6a5a3a', letterSpacing: 2, marginBottom: 8 }}>{abbr} MONEYLINE</div>
+                <div style={{ fontSize: 10, color: '#8a97b5', letterSpacing: 2, marginBottom: 8 }}>{abbr} MONEYLINE</div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                   <div>
                     <div style={{ fontSize: 9, color: '#4b5563', marginBottom: 2 }}>MODEL</div>
@@ -154,7 +154,7 @@ export default function SingleGameResults({
                       <div>
                         <div style={{ fontSize: 9, color: '#4b5563', marginBottom: 2 }}>VEGAS</div>
                         <div style={{ fontSize: 22, fontWeight: 700, color: '#d4b870', fontFamily: "'Oswald',sans-serif" }}>{vegaMoneyline > 0 ? '+' : ''}{vegaMoneyline}</div>
-                        {edge !== null && <div style={{ fontSize: 10, fontWeight: 700, color: edge > 2 ? '#3fb950' : edge < -2 ? '#f85149' : '#6a5a3a' }}>{edge > 0 ? '+' : ''}{edge.toFixed(1)}% edge</div>}
+                        {edge !== null && <div style={{ fontSize: 10, fontWeight: 700, color: edge > 2 ? '#3fb950' : edge < -2 ? '#f85149' : '#8a97b5' }}>{edge > 0 ? '+' : ''}{edge.toFixed(1)}% edge</div>}
                       </div>
                     </>
                   )}
@@ -182,17 +182,17 @@ export default function SingleGameResults({
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 10, padding: '7px 10px', background: 'rgba(251,191,36,0.03)', border: '1px solid rgba(251,191,36,0.08)', borderRadius: 4, fontSize: 9, color: '#7a6a3a' }}>
+          <div style={{ marginTop: 10, padding: '7px 10px', background: 'rgba(251,191,36,0.03)', border: '1px solid rgba(251,191,36,0.08)', borderRadius: 4, fontSize: 9, color: '#9aaabb' }}>
             For entertainment only. Edge assumes a roughly efficient market. Always verify lines.
           </div>
         </div>
       )}
 
       <div style={card}>
-        <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 10 }}>MODEL INPUTS</div>
+        <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 10 }}>MODEL INPUTS</div>
         {result.features.map((feature) => (
           <div key={feature.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,200,80,0.05)' }}>
-            <span style={{ fontSize: 10, color: '#7a6a3a' }}>{feature.label}</span>
+            <span style={{ fontSize: 10, color: '#9aaabb' }}>{feature.label}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ fontSize: 10, color: '#e8d5a0', fontFamily: 'monospace' }}>{feature.detail}</span>
               <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 2, background: feature.good ? 'rgba(251,191,36,0.08)' : 'rgba(100,100,100,0.1)', color: feature.good ? '#fbbf24' : '#4b5563', border: `1px solid ${feature.good ? 'rgba(251,191,36,0.15)' : 'rgba(100,100,100,0.12)'}` }}>{feature.good ? '▲' : '▼'}</span>
@@ -201,7 +201,7 @@ export default function SingleGameResults({
         ))}
       </div>
 
-      <div style={{ background: 'rgba(255,200,80,0.02)', border: '1px solid rgba(255,200,80,0.06)', borderRadius: 4, padding: '10px 14px', fontSize: 10, color: '#6a5a3a', lineHeight: 1.8, marginBottom: 14 }}>
+      <div style={{ background: 'rgba(255,200,80,0.02)', border: '1px solid rgba(255,200,80,0.06)', borderRadius: 4, padding: '10px 14px', fontSize: 10, color: '#8a97b5', lineHeight: 1.8, marginBottom: 14 }}>
         <span style={{ color: '#fbbf24' }}>MODEL: </span>
         Net Rating is the strongest predictor, and a 10-point gap is roughly a 5% win probability swing. eFG% weights 3s correctly (1.5x). Home court is about +3.2 points. B2B penalty is about -2.8 points.{' '}
         Stats: {hasLive ? <span style={{ color: '#fbbf24' }}>Basketball Reference · {statsUpdated}</span> : <span style={{ color: '#4b5563' }}>2024-25 estimates - import BBRef Misc Stats to update</span>}.

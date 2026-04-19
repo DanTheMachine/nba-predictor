@@ -6,24 +6,24 @@ This guide explains how to run the NBA predictor locally, from starting the serv
 
 Workspace:
 
-- `C:\projects\game_sims\nba-predictor`
+- `~/projects/nba-predictor`
 
 Main app file:
 
-- [NBAModel.tsx](C:\projects\game_sims\nba-predictor\src\NBAModel.tsx)
+- [NBAModel.tsx](~/projects/nba-predictor\src\NBAModel.tsx)
 
 Current extracted workflow pieces:
 
-- [usePredictorState.ts](C:\projects\game_sims\nba-predictor\src\hooks\usePredictorState.ts)
-- [SingleGameControls.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameControls.tsx)
-- [SingleGameResults.tsx](C:\projects\game_sims\nba-predictor\src\components\SingleGameResults.tsx)
-- [BBRefImportPanel.tsx](C:\projects\game_sims\nba-predictor\src\components\BBRefImportPanel.tsx)
-- [useResultsTracker.ts](C:\projects\game_sims\nba-predictor\src\hooks\useResultsTracker.ts)
-- [ScheduleAnalysis.tsx](C:\projects\game_sims\nba-predictor\src\components\ScheduleAnalysis.tsx)
+- [usePredictorState.ts](~/projects/nba-predictor\src\hooks\usePredictorState.ts)
+- [SingleGameControls.tsx](~/projects/nba-predictor\src\components\SingleGameControls.tsx)
+- [SingleGameResults.tsx](~/projects/nba-predictor\src\components\SingleGameResults.tsx)
+- [BBRefImportPanel.tsx](~/projects/nba-predictor\src\components\BBRefImportPanel.tsx)
+- [useResultsTracker.ts](~/projects/nba-predictor\src\hooks\useResultsTracker.ts)
+- [ScheduleAnalysis.tsx](~/projects/nba-predictor\src\components\ScheduleAnalysis.tsx)
 
 Local proxy:
 
-- [proxy.ts](C:\projects\game_sims\nba-predictor\proxy.ts)
+- [proxy.ts](~/projects/nba-predictor\proxy.ts)
 
 ## 2. What You Need Running
 
@@ -42,11 +42,11 @@ Why both are needed:
 
 Open a terminal in:
 
-- `C:\projects\game_sims\nba-predictor`
+- `~/projects/nba-predictor`
 
 Install dependencies if needed:
 
-```powershell
+```bash
 npm install
 ```
 
@@ -56,11 +56,11 @@ If `node_modules` already exists, you usually do not need to run this again.
 
 Open Terminal 1 in:
 
-- `C:\projects\game_sims\nba-predictor`
+- `~/projects/nba-predictor`
 
 Run:
 
-```powershell
+```bash
 npm run proxy
 ```
 
@@ -74,8 +74,8 @@ Keep this terminal running while you use the app.
 
 Optional custom port:
 
-```powershell
-$env:PORT=3002
+```bash
+PORT=3002
 npm run proxy
 ```
 
@@ -91,11 +91,11 @@ VITE_PROXY_BASE_URL=http://localhost:3002
 
 Open Terminal 2 in:
 
-- `C:\projects\game_sims\nba-predictor`
+- `~/projects/nba-predictor`
 
 Run:
 
-```powershell
+```bash
 npm run dev
 ```
 
@@ -419,7 +419,7 @@ Symptoms:
 
 Fix:
 
-```powershell
+```bash
 npm run proxy
 ```
 
@@ -432,7 +432,7 @@ Symptoms:
 
 Fix:
 
-```powershell
+```bash
 npm run dev
 ```
 
@@ -484,7 +484,7 @@ The repo currently has build and static checks available from the command line.
 
 Run:
 
-```powershell
+```bash
 npm run build
 ```
 
@@ -497,7 +497,7 @@ What this does:
 
 Run:
 
-```powershell
+```bash
 npm run lint
 ```
 
@@ -509,7 +509,7 @@ What this covers:
 
 Run:
 
-```powershell
+```bash
 npm run typecheck
 ```
 
@@ -526,19 +526,19 @@ The repo now includes both component-level and browser-level tests.
 
 Run:
 
-```powershell
+```bash
 npm run test
 ```
 
 Watch mode:
 
-```powershell
+```bash
 npm run test:watch
 ```
 
 Vitest UI:
 
-```powershell
+```bash
 npm run test:ui
 ```
 
@@ -552,15 +552,15 @@ What this covers:
 
 Examples of focused test runs:
 
-```powershell
+```bash
 npm run test -- --run src/hooks/usePredictorState.test.ts src/hooks/useResultsTracker.test.ts src/components/SingleGameResults.test.tsx
 ```
 
-```powershell
+```bash
 npm run test -- --run src/lib/bulkOddsParser.test.ts
 ```
 
-```powershell
+```bash
 npm run test -- --run src/components/ScheduleAnalysis.test.tsx src/lib/compositeRecommendation.test.ts src/lib/betting.test.ts
 ```
 
@@ -568,7 +568,7 @@ npm run test -- --run src/components/ScheduleAnalysis.test.tsx src/lib/composite
 
 Run:
 
-```powershell
+```bash
 npm run test:e2e
 ```
 

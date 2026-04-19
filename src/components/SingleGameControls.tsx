@@ -123,7 +123,7 @@ export default function SingleGameControls({
     <div style={{ animation: 'fadeUp 0.2s ease' }}>
       <div style={card}>
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 5 }}>FILTER BY DIVISION</div>
+          <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 5 }}>FILTER BY DIVISION</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {divOptions.map((division) => (
               <button
@@ -137,7 +137,7 @@ export default function SingleGameControls({
                   cursor: 'pointer',
                   letterSpacing: 1,
                   background: divFilter === division ? '#b45309' : 'rgba(255,200,80,0.04)',
-                  color: divFilter === division ? '#fef3c7' : '#6a5a3a',
+                  color: divFilter === division ? '#fef3c7' : '#8a97b5',
                   border: divFilter === division ? 'none' : '1px solid rgba(255,200,80,0.1)',
                   fontWeight: divFilter === division ? 700 : 400,
                 }}
@@ -154,7 +154,7 @@ export default function SingleGameControls({
             { value: awayTeam, onChange: setAwayTeam, excludeKey: homeTeam, label: 'AWAY TEAM' },
           ].map(({ value, onChange, excludeKey, label }) => (
             <div key={label}>
-              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 4, fontFamily: 'monospace' }}>{label}</div>
+              <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 4, fontFamily: 'monospace' }}>{label}</div>
               <select
                 value={value}
                 onChange={(event) => {
@@ -189,7 +189,7 @@ export default function SingleGameControls({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
           <div>
-            <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 4 }}>GAME TYPE</div>
+            <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 4 }}>GAME TYPE</div>
             <select
               value={gameType}
               onChange={(event) => {
@@ -221,16 +221,16 @@ export default function SingleGameControls({
                 cursor: 'pointer',
               }}
             >
-              <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 2, marginBottom: 5 }}>BACK-TO-BACK</div>
+              <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 2, marginBottom: 5 }}>BACK-TO-BACK</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 11, color: value ? '#fbbf24' : '#6a5a3a' }}>{teams[abbr].name}</span>
+                <span style={{ fontSize: 11, color: value ? '#fbbf24' : '#8a97b5' }}>{teams[abbr].name}</span>
                 <span
                   style={{
                     fontSize: 10,
                     padding: '1px 7px',
                     borderRadius: 2,
                     background: value ? 'rgba(251,191,36,0.1)' : 'rgba(255,200,80,0.05)',
-                    color: value ? '#fbbf24' : '#4a3a2a',
+                    color: value ? '#fbbf24' : '#6b7a95',
                   }}
                 >
                   {value ? 'YES' : 'NO'}
@@ -242,7 +242,7 @@ export default function SingleGameControls({
       </div>
 
       <div style={card}>
-        <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 12 }}>
+        <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 12 }}>
           ADVANCED STATS COMPARISON
           {hasLive ? <span style={{ color: '#fbbf24', marginLeft: 8 }}> · BBRef LIVE ✦</span> : <span style={{ color: '#4b5563', marginLeft: 8 }}> · ESTIMATES</span>}
         </div>
@@ -284,10 +284,10 @@ export default function SingleGameControls({
       <div style={{ ...card, border: `1px solid ${oddsSource === 'espn' ? 'rgba(74,222,128,0.2)' : oddsSource === 'manual' && odds ? 'rgba(251,191,36,0.18)' : 'rgba(255,200,80,0.13)'}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: oddsSource === 'manual' ? 14 : 0 }}>
           <div>
-            <div style={{ fontSize: 10, color: '#7a6a3a', letterSpacing: 3, marginBottom: 5 }}>LIVE ODDS / LINES</div>
+            <div style={{ fontSize: 10, color: '#9aaabb', letterSpacing: 3, marginBottom: 5 }}>LIVE ODDS / LINES</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: oddsSource === 'espn' ? '#4ade80' : oddsSource === 'fetching' ? '#fbbf24' : oddsSource === 'manual' && odds ? '#f59e0b' : '#4b5563', animation: oddsSource === 'fetching' ? 'pulse 0.8s infinite' : 'none' }} />
-              <span style={{ fontSize: 11, color: oddsSource === 'espn' ? '#4ade80' : oddsSource === 'manual' && odds ? '#fbbf24' : '#6a5a3a' }}>
+              <span style={{ fontSize: 11, color: oddsSource === 'espn' ? '#4ade80' : oddsSource === 'manual' && odds ? '#fbbf24' : '#8a97b5' }}>
                 {oddsSource === 'none' ? 'Fetch today\'s lines or enter manually' : oddsStatus}
               </span>
             </div>
@@ -317,7 +317,7 @@ export default function SingleGameControls({
                 setOddsStatus('Enter lines below')
                 setOdds(null)
               }}
-              style={{ background: 'rgba(255,200,80,0.04)', border: '1px solid rgba(255,200,80,0.13)', borderRadius: 4, padding: '7px 14px', color: '#7a6a3a', fontSize: 10, letterSpacing: 2, fontFamily: 'monospace', cursor: 'pointer' }}
+              style={{ background: 'rgba(255,200,80,0.04)', border: '1px solid rgba(255,200,80,0.13)', borderRadius: 4, padding: '7px 14px', color: '#9aaabb', fontSize: 10, letterSpacing: 2, fontFamily: 'monospace', cursor: 'pointer' }}
             >
               MANUAL
             </button>
@@ -327,7 +327,7 @@ export default function SingleGameControls({
         {oddsSource === 'manual' && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 10, color: '#6a5a3a' }}>SPREAD:</span>
+              <span style={{ fontSize: 10, color: '#8a97b5' }}>SPREAD:</span>
               {['-3.5', '+3.5'].map((value) => {
                 const active = (manualOdds.homeSpread ?? '-3.5') === value
                 return (
@@ -355,7 +355,7 @@ export default function SingleGameControls({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
               {MANUAL_ODDS_FIELDS.map(([label, key, placeholder]) => (
                 <div key={key}>
-                  <div style={{ fontSize: 10, color: '#6a5a3a', letterSpacing: 1, marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: '#8a97b5', letterSpacing: 1, marginBottom: 3 }}>{label}</div>
                   <input
                     value={manualOdds[key]}
                     onChange={(event) => setManualOdds((prev) => ({ ...prev, [key]: event.target.value }))}

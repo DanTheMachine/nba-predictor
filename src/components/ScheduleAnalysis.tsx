@@ -134,7 +134,7 @@ function freshness(value?: string): string {
 }
 
 function freshnessColor(value?: string): string {
-  return value ? "#3fb950" : "#5a4a2a"
+  return value ? "#3fb950" : "#7a8ab2"
 }
 
 function formatSignedNumber(value: number, digits = 1): string {
@@ -351,7 +351,7 @@ function statusTone(status: string, hasRows: boolean): string {
     return "#f87171"
   }
 
-  return hasRows ? "#3fb950" : "#5a4a2a"
+  return hasRows ? "#3fb950" : "#7a8ab2"
 }
 
 function signalMarketLabel(tagLabel: string): string {
@@ -430,7 +430,7 @@ function supportTone(score: number): string {
   if (score >= 4) return "#3fb950"
   if (score >= 2) return "#fbbf24"
   if (score >= 1) return "#60a5fa"
-  return "#7a6a3a"
+  return "#9aaabb"
 }
 
 function supportBackground(score: number): string {
@@ -478,7 +478,7 @@ function sharpStatusTone(row: ScheduleRow): { color: string; border: string; bac
     }
   }
   return {
-    color: "#7a6a3a",
+    color: "#9aaabb",
     border: "rgba(255,200,80,0.12)",
     background: "rgba(255,200,80,0.03)",
   }
@@ -494,7 +494,7 @@ function recommendationTone(tier: "A" | "B" | "C" | "PASS"): { color: string; bo
   if (tier === "C") {
     return { color: "#93c5fd", border: "rgba(96,165,250,0.28)", background: "rgba(96,165,250,0.08)" }
   }
-  return { color: "#7a6a3a", border: "rgba(255,200,80,0.12)", background: "rgba(255,200,80,0.03)" }
+  return { color: "#9aaabb", border: "rgba(255,200,80,0.12)", background: "rgba(255,200,80,0.03)" }
 }
 
 function compositeEdgePercent(
@@ -811,8 +811,8 @@ export default function ScheduleAnalysis({
     <div style={{ background:"#0f0800", border:"1px solid #251800", borderRadius:8, padding:16 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10, marginBottom:schedStatus ? 12 : 0 }}>
         <div>
-          <div style={{ fontSize:10, fontWeight:700, color:"#5a4a2a", letterSpacing:3, marginBottom:3 }}>TODAY&apos;S GAMES & EXPORT</div>
-          <div style={{ fontSize:11, color:"#3a2a1a" }}>Game intelligence cards combine model output, sharp context, injuries, and recent form.</div>
+          <div style={{ fontSize:10, fontWeight:700, color:"#7a8ab2", letterSpacing:3, marginBottom:3 }}>TODAY&apos;S GAMES & EXPORT</div>
+          <div style={{ fontSize:11, color:"#6b7a95" }}>Game intelligence cards combine model output, sharp context, injuries, and recent form.</div>
           {linesRows.length > 0 && (
             <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:7 }}>
               <div style={{ fontSize:8, color:"#93c5fd", border:"1px solid rgba(96,165,250,0.2)", background:"rgba(96,165,250,0.05)", borderRadius:999, padding:"3px 8px", letterSpacing:1 }}>
@@ -828,13 +828,13 @@ export default function ScheduleAnalysis({
           )}
         </div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
-          <button onClick={handleLoadSchedule} disabled={schedLoading} style={{ background:schedLoading ? "#0f0800" : "#b45309", border:"none", borderRadius:5, padding:"8px 14px", color:schedLoading ? "#3a2a1a" : "#fef3c7", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:schedLoading ? "not-allowed" : "pointer" }}>{schedLoading ? "LOADING..." : linesRows.length ? "RELOAD" : "LOAD GAMES"}</button>
-          {linesRows.length > 0 && <button onClick={refreshLiveSharp} disabled={!hasLiveSharpSource} style={{ background:hasLiveSharpSource ? "rgba(59,130,246,0.12)" : "rgba(59,130,246,0.04)", border:"1px solid rgba(59,130,246,0.24)", borderRadius:5, padding:"8px 14px", color:hasLiveSharpSource ? "#bfdbfe" : "#5a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasLiveSharpSource ? "pointer" : "not-allowed" }}>REFRESH LIVE SHARP</button>}
-          {linesRows.length > 0 && <button onClick={loadSampleSharp} disabled={!hasEditableOdds} style={{ background:hasEditableOdds ? "rgba(251,191,36,0.12)" : "rgba(251,191,36,0.04)", border:"1px solid rgba(251,191,36,0.24)", borderRadius:5, padding:"8px 14px", color:hasEditableOdds ? "#fde68a" : "#7a6a3a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasEditableOdds ? "pointer" : "not-allowed" }}>LOAD SAMPLE SHARP</button>}
-          {linesRows.length > 0 && <button onClick={() => setShowBulkImport((prev) => !prev)} style={{ background:showBulkImport ? "rgba(251,191,36,0.12)" : "rgba(255,200,80,0.06)", border:"1px solid rgba(255,200,80,0.2)", borderRadius:5, padding:"8px 14px", color:showBulkImport ? "#fbbf24" : "#9a8a5a", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>{showBulkImport ? "HIDE" : "BULK EDIT LINES"}</button>}
-          {linesRows.length > 0 && <button onClick={handleRunAllSims} disabled={simsRunning} style={{ background:simsRunning ? "#0f0800" : "#d29922", border:"none", borderRadius:5, padding:"8px 14px", color:simsRunning ? "#3a2a1a" : "#1a0f00", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:simsRunning ? "not-allowed" : "pointer" }}>{simsRunning ? "RUNNING..." : "RUN ALL SIMS"}</button>}
+          <button onClick={handleLoadSchedule} disabled={schedLoading} style={{ background:schedLoading ? "#0f0800" : "#b45309", border:"none", borderRadius:5, padding:"8px 14px", color:schedLoading ? "#6b7a95" : "#fef3c7", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:schedLoading ? "not-allowed" : "pointer" }}>{schedLoading ? "LOADING..." : linesRows.length ? "RELOAD" : "LOAD GAMES"}</button>
+          {linesRows.length > 0 && <button onClick={refreshLiveSharp} disabled={!hasLiveSharpSource} style={{ background:hasLiveSharpSource ? "rgba(59,130,246,0.12)" : "rgba(59,130,246,0.04)", border:"1px solid rgba(59,130,246,0.24)", borderRadius:5, padding:"8px 14px", color:hasLiveSharpSource ? "#bfdbfe" : "#7a8ab5", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasLiveSharpSource ? "pointer" : "not-allowed" }}>REFRESH LIVE SHARP</button>}
+          {linesRows.length > 0 && <button onClick={loadSampleSharp} disabled={!hasEditableOdds} style={{ background:hasEditableOdds ? "rgba(251,191,36,0.12)" : "rgba(251,191,36,0.04)", border:"1px solid rgba(251,191,36,0.24)", borderRadius:5, padding:"8px 14px", color:hasEditableOdds ? "#fde68a" : "#9aaabb", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasEditableOdds ? "pointer" : "not-allowed" }}>LOAD SAMPLE SHARP</button>}
+          {linesRows.length > 0 && <button onClick={() => setShowBulkImport((prev) => !prev)} style={{ background:showBulkImport ? "rgba(251,191,36,0.12)" : "rgba(255,200,80,0.06)", border:"1px solid rgba(255,200,80,0.2)", borderRadius:5, padding:"8px 14px", color:showBulkImport ? "#fbbf24" : "#a8b8cc", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>{showBulkImport ? "HIDE" : "BULK EDIT LINES"}</button>}
+          {linesRows.length > 0 && <button onClick={handleRunAllSims} disabled={simsRunning} style={{ background:simsRunning ? "#0f0800" : "#d29922", border:"none", borderRadius:5, padding:"8px 14px", color:simsRunning ? "#6b7a95" : "#1a0f00", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:simsRunning ? "not-allowed" : "pointer" }}>{simsRunning ? "RUNNING..." : "RUN ALL SIMS"}</button>}
           {hasSimResults && <button onClick={handleExport} style={{ background:"#3fb950", border:"none", borderRadius:5, padding:"8px 14px", color:"#0d1117", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>PREDICTIONS CSV</button>}
-          <button onClick={() => handleFetchResults(true)} disabled={fetchingResults} style={{ background:fetchingResults ? "#0f0800" : "linear-gradient(135deg,#1d4ed8,#3b82f6)", border:"none", borderRadius:5, padding:"8px 14px", color:fetchingResults ? "#3a2a1a" : "#eff6ff", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:fetchingResults ? "not-allowed" : "pointer" }}>{fetchingResults ? "FETCHING..." : "RESULTS CSV"}</button>
+          <button onClick={() => handleFetchResults(true)} disabled={fetchingResults} style={{ background:fetchingResults ? "#0f0800" : "linear-gradient(135deg,#1d4ed8,#3b82f6)", border:"none", borderRadius:5, padding:"8px 14px", color:fetchingResults ? "#6b7a95" : "#eff6ff", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:fetchingResults ? "not-allowed" : "pointer" }}>{fetchingResults ? "FETCHING..." : "RESULTS CSV"}</button>
         </div>
       </div>
 
@@ -843,8 +843,8 @@ export default function ScheduleAnalysis({
           <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:3, marginBottom:8, fontWeight:700 }}>BULK ODDS IMPORT</div>
           <textarea value={bulkPaste} onChange={(e) => setBulkPaste(e.target.value)} style={{ width:"100%", height:140, background:"#0d0800", border:"1px solid rgba(255,200,80,0.15)", borderRadius:4, color:"#e8d5a0", fontSize:11, fontFamily:"monospace", padding:10, resize:"vertical", boxSizing:"border-box", outline:"none" }} />
           <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:8, marginTop:8 }}>
-            <button onClick={handleBulkImport} disabled={!bulkPaste.trim()} style={{ padding:"9px 0", background:bulkPaste.trim() ? "linear-gradient(135deg,#b45309,#92400e)" : "rgba(255,200,80,0.04)", border:bulkPaste.trim() ? "none" : "1px solid rgba(255,200,80,0.08)", borderRadius:4, color:bulkPaste.trim() ? "#fef3c7" : "#4a3a2a", fontSize:11, fontWeight:700, letterSpacing:3, fontFamily:"monospace", cursor:bulkPaste.trim() ? "pointer" : "not-allowed" }}>APPLY TO TODAY&apos;S GAMES</button>
-            <button onClick={() => setBulkPaste("")} style={{ padding:"9px 14px", background:"transparent", border:"1px solid rgba(255,200,80,0.1)", borderRadius:4, color:"#4a3a2a", fontSize:10, fontFamily:"monospace", cursor:"pointer" }}>CLEAR</button>
+            <button onClick={handleBulkImport} disabled={!bulkPaste.trim()} style={{ padding:"9px 0", background:bulkPaste.trim() ? "linear-gradient(135deg,#b45309,#92400e)" : "rgba(255,200,80,0.04)", border:bulkPaste.trim() ? "none" : "1px solid rgba(255,200,80,0.08)", borderRadius:4, color:bulkPaste.trim() ? "#fef3c7" : "#6b7a95", fontSize:11, fontWeight:700, letterSpacing:3, fontFamily:"monospace", cursor:bulkPaste.trim() ? "pointer" : "not-allowed" }}>APPLY TO TODAY&apos;S GAMES</button>
+            <button onClick={() => setBulkPaste("")} style={{ padding:"9px 14px", background:"transparent", border:"1px solid rgba(255,200,80,0.1)", borderRadius:4, color:"#6b7a95", fontSize:10, fontFamily:"monospace", cursor:"pointer" }}>CLEAR</button>
           </div>
           {bulkStatus && <div style={{ fontSize:10, color:"#3fb950", marginTop:6 }}>{bulkStatus}</div>}
           {bulkError && <div style={{ fontSize:10, color:"#f87171", marginTop:6 }}>WARN {bulkError}</div>}
@@ -867,19 +867,19 @@ export default function ScheduleAnalysis({
               <div key={`${row.game.homeAbbr}-${row.game.awayAbbr}-${idx}`} style={{ background:"#0a0600", border:"1px solid #1f1400", borderRadius:8, overflow:"hidden" }}>
                 <div style={{ padding:"12px 14px", display:"grid", gridTemplateColumns:"1.5fr 1.6fr auto auto", gap:10, alignItems:"center" }}>
                   <div>
-                    <div style={{ fontSize:9, color:"#7a6a3a", marginBottom:4 }}>
+                    <div style={{ fontSize:9, color:"#9aaabb", marginBottom:4 }}>
                       {row.editedOdds
                         ? `${row.game.gameTime} · ${hasManualOverride ? "Edited, Using Manual Line" : "Vegas Line"}`
                         : row.game.gameTime}
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}><div style={{ fontSize:18, color:"#e8d5a0", fontWeight:700, fontFamily:"'Oswald',monospace" }}>{row.game.awayAbbr} at {row.game.homeAbbr}</div>{row.editedOdds?.source === "manual" && (<div style={{ fontSize:8, color:"#dbeafe", border:"1px solid rgba(96,165,250,0.28)", background:"rgba(96,165,250,0.08)", borderRadius:999, padding:"2px 7px", letterSpacing:1.4, fontWeight:700, lineHeight:1.2 }}>EDITED</div>)}</div>
-                    <div style={{ fontSize:10, color:"#6a5a3a", marginTop:2 }}>
+                    <div style={{ fontSize:10, color:"#8a97b5", marginTop:2 }}>
                       {sim ? `Proj ${sim.hScore}-${sim.aScore} · Total ${sim.total} · ${row.game.homeAbbr} ${(sim.hWinProb * 100).toFixed(1)}% / ${row.game.awayAbbr} ${(sim.aWinProb * 100).toFixed(1)}%` : "Run the model to generate projections"}
                     </div>
-                    <div style={{ fontSize:9, color:"#8a7a4a", marginTop:4, lineHeight:1.45 }}>
+                    <div style={{ fontSize:9, color:"#9eafc0", marginTop:4, lineHeight:1.45 }}>
                       {hasManualOverride ? (
                         <>
-                          <div style={{ color:"#6a5a3a" }}>
+                          <div style={{ color:"#8a97b5" }}>
                             {`V - ${formatCompactHeaderOddsSummary(row, row.espnOdds)}`}
                           </div>
                           <div style={{ color:"#93c5fd" }}>
@@ -887,7 +887,7 @@ export default function ScheduleAnalysis({
                           </div>
                         </>
                       ) : row.editedOdds ? (
-                        <div style={{ color:"#8a7a4a" }}>
+                        <div style={{ color:"#9eafc0" }}>
                           {formatCompactHeaderOddsSummary(row, row.editedOdds)}
                         </div>
                       ) : null}
@@ -896,7 +896,7 @@ export default function ScheduleAnalysis({
                       <div style={{ fontSize:8, color:sharpStatus.color, border:`1px solid ${sharpStatus.border}`, background:sharpStatus.background, borderRadius:999, padding:"2px 7px", letterSpacing:1.2, fontWeight:700, lineHeight:1.2 }}>
                         {sharpStatusLabel(row)}
                       </div>
-                      <div style={{ fontSize:8, color:"#5a6a8a" }}>
+                      <div style={{ fontSize:8, color:"#7a8ab5" }}>
                         {row.sharpInput?.source
                           ? `Sharp source: ${row.sharpInput.source}${row.sharpInput.lastUpdated ? ` | ${freshness(row.sharpInput.lastUpdated)}` : ""}`
                           : row.marketData?.sourceLabel
@@ -906,30 +906,30 @@ export default function ScheduleAnalysis({
                     </div>
                   </div>
                   <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.12)", borderRadius:6, padding:"8px 10px" }}>
-                    <div style={{ fontSize:8, color:"#5a4a2a", marginBottom:4 }}>SIM BREAKDOWN</div>
+                    <div style={{ fontSize:8, color:"#7a8ab2", marginBottom:4 }}>SIM BREAKDOWN</div>
                     {sim && analysis ? (
                       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:8 }}>
                         <div>
-                          <div style={{ fontSize:8, color:"#5a4a2a" }}>ML</div>
-                          <div style={{ fontSize:10, color:analysis.mlValueSide !== "none" ? "#3fb950" : "#6a5a3a", fontWeight:700 }}>
+                          <div style={{ fontSize:8, color:"#7a8ab2" }}>ML</div>
+                          <div style={{ fontSize:10, color:analysis.mlValueSide !== "none" ? "#3fb950" : "#8a97b5", fontWeight:700 }}>
                             {analysis.mlValueSide !== "none" ? `${analysis.mlValueSide.toUpperCase()} +${analysis.mlValuePct.toFixed(1)}%` : "PASS"}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize:8, color:"#5a4a2a" }}>SPR</div>
-                          <div style={{ fontSize:10, color:analysis.spreadRec !== "pass" ? "#3fb950" : "#6a5a3a", fontWeight:700 }}>
+                          <div style={{ fontSize:8, color:"#7a8ab2" }}>SPR</div>
+                          <div style={{ fontSize:10, color:analysis.spreadRec !== "pass" ? "#3fb950" : "#8a97b5", fontWeight:700 }}>
                             {analysis.spreadRec !== "pass" ? `${analysis.spreadRec.toUpperCase()} +${analysis.spreadEdge.toFixed(1)}%` : "PASS"}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize:8, color:"#5a4a2a" }}>OU</div>
-                          <div style={{ fontSize:10, color:analysis.ouRec !== "pass" ? "#3fb950" : "#6a5a3a", fontWeight:700 }}>
+                          <div style={{ fontSize:8, color:"#7a8ab2" }}>OU</div>
+                          <div style={{ fontSize:10, color:analysis.ouRec !== "pass" ? "#3fb950" : "#8a97b5", fontWeight:700 }}>
                             {analysis.ouRec !== "pass" ? `${analysis.ouRec.toUpperCase()} +${analysis.ouEdgePct.toFixed(1)}%` : "PASS"}
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ fontSize:10, color:"#6a5a3a" }}>Run sim to see model edges on this card.</div>
+                      <div style={{ fontSize:10, color:"#8a97b5" }}>Run sim to see model edges on this card.</div>
                     )}
                   </div>
                   <button onClick={() => setLinesRows((prev) => prev.map((currentRow, rowIndex) => {
@@ -947,7 +947,7 @@ export default function ScheduleAnalysis({
                       <div style={{ background:"linear-gradient(180deg,rgba(255,200,80,0.06),rgba(15,8,0,0.96))", border:"1px solid rgba(255,200,80,0.16)", borderRadius:6, padding:"10px 10px 8px", boxShadow:"inset 0 0 0 1px rgba(255,200,80,0.04)", width:"fit-content", height:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-start" }}>
                         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:6 }}>
                           <div style={{ fontSize:9, fontWeight:700, color:"#f8e7b4", letterSpacing:1.5 }}>MODEL & MARKET</div>
-                          <button onClick={() => { if (editingIdx === idx) setEditingIdx(null); else startEdit(idx); }} style={{ background:editingIdx === idx ? "rgba(251,191,36,0.15)" : "rgba(255,200,80,0.06)", border:`1px solid ${editingIdx === idx ? "rgba(251,191,36,0.4)" : "rgba(255,200,80,0.15)"}`, borderRadius:4, padding:"5px 8px", color:editingIdx === idx ? "#fbbf24" : "#9a8a5a", fontSize:8, fontWeight:700, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
+                          <button onClick={() => { if (editingIdx === idx) setEditingIdx(null); else startEdit(idx); }} style={{ background:editingIdx === idx ? "rgba(251,191,36,0.15)" : "rgba(255,200,80,0.06)", border:`1px solid ${editingIdx === idx ? "rgba(251,191,36,0.4)" : "rgba(255,200,80,0.15)"}`, borderRadius:4, padding:"5px 8px", color:editingIdx === idx ? "#fbbf24" : "#a8b8cc", fontSize:8, fontWeight:700, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
                             {editingIdx === idx ? "CLOSE ODDS" : "EDIT ODDS"}
                           </button>
                         </div>
@@ -966,7 +966,7 @@ export default function ScheduleAnalysis({
                                   </div>
                                 )}
                                 {!row.espnOdds && row.editedOdds.source !== "manual" && (
-                                  <div style={{ fontSize:8, color:"#5a4a2a", letterSpacing:1.5, lineHeight:"24px" }}>
+                                  <div style={{ fontSize:8, color:"#7a8ab2", letterSpacing:1.5, lineHeight:"24px" }}>
                                     {row.editedOdds.source.toUpperCase()}
                                   </div>
                                 )}
@@ -1004,7 +1004,7 @@ export default function ScheduleAnalysis({
                             </div>
                           </>
                         ) : (
-                          <div style={{ fontSize:9, color:"#7a6a3a", marginBottom:8 }}>No odds yet</div>
+                          <div style={{ fontSize:9, color:"#9aaabb", marginBottom:8 }}>No odds yet</div>
                         )}
                         <div style={{ fontSize:12, color:"#f8e7b4", fontWeight:700, textAlign:"center", marginTop:10 }}>
                           {sim ? `PROJECTION: ${row.game.homeAbbr} ${sim.hScore} - ${row.game.awayAbbr} ${sim.aScore} | Total ${sim.total}` : "No simulation yet"}
@@ -1092,7 +1092,7 @@ export default function ScheduleAnalysis({
                     <div style={{ background:"linear-gradient(180deg,rgba(255,200,80,0.06),rgba(15,8,0,0.96))", border:"1px solid rgba(255,200,80,0.16)", borderRadius:6, padding:12, marginTop:12, boxShadow:"inset 0 0 0 1px rgba(255,200,80,0.04)" }}>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:8 }}>
                         <div style={{ fontSize:9, fontWeight:700, color:"#f8e7b4", letterSpacing:1.5 }}>SHARP INFORMATION</div>
-                        <button onClick={() => { if (isContextEditing) setContextEditingIdx(null); else { setContextFields(toContext(row)); setContextEditingIdx(idx); } }} style={{ background:isContextEditing ? "rgba(96,165,250,0.16)" : "rgba(96,165,250,0.05)", border:`1px solid ${isContextEditing ? "rgba(96,165,250,0.35)" : "rgba(96,165,250,0.2)"}`, borderRadius:4, padding:"5px 8px", color:isContextEditing ? "#fbbf24" : "#9a8a5a", fontSize:8, fontWeight:700, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
+                        <button onClick={() => { if (isContextEditing) setContextEditingIdx(null); else { setContextFields(toContext(row)); setContextEditingIdx(idx); } }} style={{ background:isContextEditing ? "rgba(96,165,250,0.16)" : "rgba(96,165,250,0.05)", border:`1px solid ${isContextEditing ? "rgba(96,165,250,0.35)" : "rgba(96,165,250,0.2)"}`, borderRadius:4, padding:"5px 8px", color:isContextEditing ? "#fbbf24" : "#a8b8cc", fontSize:8, fontWeight:700, fontFamily:"monospace", cursor:"pointer", whiteSpace:"nowrap" }}>
                           {isContextEditing ? "CLOSE CONTEXT" : "EDIT SHARP / INJURIES"}
                         </button>
                       </div>
@@ -1157,14 +1157,14 @@ export default function ScheduleAnalysis({
                                           padding:"7px 8px",
                                         }}
                                       >
-                                        <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.1, marginBottom:4 }}>{signal.label}</div>
+                                        <div style={{ fontSize:7, color:"#9aaabb", letterSpacing:1.1, marginBottom:4 }}>{signal.label}</div>
                                         <div style={{ fontSize:12, color:supportTone(signal.score), fontWeight:700, marginBottom:3 }}>
                                           {signal.score}/6
                                         </div>
                                         <div style={{ fontSize:8, color:"#dbeafe", lineHeight:1.4 }}>
                                           {signal.evidence > 0 ? `${signal.evidence} supporting flags` : "No support yet"}
                                         </div>
-                                        <div style={{ fontSize:7, color:modelAgreementLabel(signal, row, analysis).startsWith("Model agrees") ? "#3fb950" : modelAgreementLabel(signal, row, analysis).startsWith("Model differs") ? "#fbbf24" : "#7a6a3a", marginTop:4, lineHeight:1.4 }}>
+                                        <div style={{ fontSize:7, color:modelAgreementLabel(signal, row, analysis).startsWith("Model agrees") ? "#3fb950" : modelAgreementLabel(signal, row, analysis).startsWith("Model differs") ? "#fbbf24" : "#9aaabb", marginTop:4, lineHeight:1.4 }}>
                                           {modelAgreementLabel(signal, row, analysis)}
                                         </div>
                                       </div>
@@ -1173,7 +1173,7 @@ export default function ScheduleAnalysis({
                                 </div>
                                 <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
                                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:6 }}>
-                                    <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2 }} title="Opening, manual, and current Vegas market references for this matchup.">LINE MOVES</div>
+                                    <div style={{ fontSize:7, color:"#9aaabb", letterSpacing:1.2 }} title="Opening, manual, and current Vegas market references for this matchup.">LINE MOVES</div>
                                     <div style={{ fontSize:7, color:"#c9b27a", letterSpacing:1.2 }} title="The provider or origin for the current market-signals dataset.">
                                       Source: {row.sharpContext.source || "Manual"}
                                     </div>
@@ -1233,7 +1233,7 @@ export default function ScheduleAnalysis({
                                     </div>
                                   </div>
                                   <div style={{ background:"rgba(96,165,250,0.04)", border:"1px solid rgba(96,165,250,0.12)", borderRadius:6, padding:"7px 8px" }}>
-                                    <div style={{ fontSize:7, color:"#5a6a8a", letterSpacing:1.2, marginBottom:4 }} title="Money minus bets percentage gaps. A positive gap means more money than tickets on that side, which can hint at sharper participation.">SPLITS</div>
+                                    <div style={{ fontSize:7, color:"#7a8ab5", letterSpacing:1.2, marginBottom:4 }} title="Money minus bets percentage gaps. A positive gap means more money than tickets on that side, which can hint at sharper participation.">SPLITS</div>
                                     <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
                                       <div style={{ fontSize:8, color:"#dbeafe" }} title="Home moneyline money percentage minus home moneyline bet percentage.">ML gap: {formatPercentGap(row.sharpContext.moneylineHomeSplitGap) ?? "N/A"}</div>
                                       <div style={{ fontSize:8, color:"#dbeafe" }} title="Home spread money percentage minus home spread bet percentage.">Spread gap: {formatPercentGap(row.sharpContext.spreadHomeSplitGap) ?? "N/A"}</div>
@@ -1241,7 +1241,7 @@ export default function ScheduleAnalysis({
                                     </div>
                                   </div>
                                   <div style={{ background:"rgba(63,185,80,0.05)", border:"1px solid rgba(63,185,80,0.16)", borderRadius:6, padding:"7px 8px" }}>
-                                    <div style={{ fontSize:7, color:"#6a5a3a", letterSpacing:1.2, marginBottom:4 }} title="Directional flags from external sharp-style reads such as CLV, steam, or reverse-line movement.">LEAN FLAGS</div>
+                                    <div style={{ fontSize:7, color:"#8a97b5", letterSpacing:1.2, marginBottom:4 }} title="Directional flags from external sharp-style reads such as CLV, steam, or reverse-line movement.">LEAN FLAGS</div>
                                     <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
                                       <div style={{ fontSize:8, color:"#e8d5a0" }} title="Closing-line-value lean. Supports one or more comma-separated values like HOME or HOME, UNDER.">CLV: {formatLeanValue(row.sharpInput?.clvLean)}</div>
                                       <div style={{ fontSize:8, color:"#e8d5a0" }} title="Steam-move lean. Supports one or more comma-separated values like OVER or AWAY, UNDER.">Steam: {formatLeanValue(row.sharpInput?.steamMoveLean)}</div>
@@ -1249,7 +1249,7 @@ export default function ScheduleAnalysis({
                                     </div>
                                   </div>
                                   <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
-                                    <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2, marginBottom:4 }} title="Normalized consensus-style market lean for each market.">CONSENSUS</div>
+                                    <div style={{ fontSize:7, color:"#9aaabb", letterSpacing:1.2, marginBottom:4 }} title="Normalized consensus-style market lean for each market.">CONSENSUS</div>
                                     <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
                                       <div style={{ fontSize:8, color:"#e8d5a0" }} title="Consensus moneyline side.">ML: {sharpSideLabel(row.sharpInput?.consensusMoneyline, row)}</div>
                                       <div style={{ fontSize:8, color:"#e8d5a0" }} title="Consensus spread side.">Spread: {sharpSideLabel(row.sharpInput?.consensusSpread, row)}</div>
@@ -1258,21 +1258,21 @@ export default function ScheduleAnalysis({
                                   </div>
                                 </div>
                                 <div style={{ background:"rgba(255,200,80,0.04)", border:"1px solid rgba(255,200,80,0.1)", borderRadius:6, padding:"7px 8px" }}>
-                                  <div style={{ fontSize:7, color:"#7a6a3a", letterSpacing:1.2, marginBottom:6 }} title="Compact summary of the sharp-style market signals currently detected for this game.">SIGNAL SUMMARY</div>
+                                  <div style={{ fontSize:7, color:"#9aaabb", letterSpacing:1.2, marginBottom:6 }} title="Compact summary of the sharp-style market signals currently detected for this game.">SIGNAL SUMMARY</div>
                                   <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                                     {row.sharpContext.tags.length ? row.sharpContext.tags.map((tag, tagIndex) => (
                                       <div key={`${tag.label}-${tagIndex}`} title={`${tag.label}: ${tag.aligned ? "supports the inferred sharp read" : "is mixed or cautionary"}.`} style={{ fontSize:8, color:sharpTone(tag.aligned), border:`1px solid ${tag.aligned ? "rgba(63,185,80,0.25)" : "rgba(245,158,11,0.25)"}`, background:tag.aligned ? "rgba(63,185,80,0.08)" : "rgba(245,158,11,0.08)", borderRadius:999, padding:"3px 7px" }}>
                                         {signalMarketLabel(tag.label)} · {tag.detail}
                                       </div>
                                     )) : (
-                                      <div style={{ fontSize:8, color:"#7a6a3a" }}>No sharp flags yet</div>
+                                      <div style={{ fontSize:8, color:"#9aaabb" }}>No sharp flags yet</div>
                                     )}
                                   </div>
                                 </div>
                                 {row.sharpInput?.notes ? <div style={{ fontSize:8, color:"#c9b27a", lineHeight:1.5 }} title="Freeform market-signals notes or context.">{row.sharpInput.notes}</div> : null}
                               </div>
                             ) : (
-                              <div style={{ fontSize:9, color:"#7a6a3a" }}>No sharp data loaded</div>
+                              <div style={{ fontSize:9, color:"#9aaabb" }}>No sharp data loaded</div>
                             )}
                           </div>
                         </div>
@@ -1299,7 +1299,7 @@ export default function ScheduleAnalysis({
                                       )
                                     })
                                   ) : (
-                                    <div style={{ fontSize:8, color:"#7a6a3a" }}>No projected starters</div>
+                                    <div style={{ fontSize:8, color:"#9aaabb" }}>No projected starters</div>
                                   )}
                                 </div>
                               </div>
@@ -1317,7 +1317,7 @@ export default function ScheduleAnalysis({
                                       )
                                     })
                                   ) : (
-                                    <div style={{ fontSize:8, color:"#5a6a8a" }}>No projected starters</div>
+                                    <div style={{ fontSize:8, color:"#7a8ab5" }}>No projected starters</div>
                                   )}
                                 </div>
                               </div>
@@ -1341,7 +1341,7 @@ export default function ScheduleAnalysis({
                                         </div>
                                       ))
                                   ) : (
-                                    <div style={{ fontSize:8, color:"#7a6a3a" }}>No listed injuries</div>
+                                    <div style={{ fontSize:8, color:"#9aaabb" }}>No listed injuries</div>
                                   )}
                                 </div>
                               </div>
@@ -1357,7 +1357,7 @@ export default function ScheduleAnalysis({
                                         </div>
                                       ))
                                   ) : (
-                                    <div style={{ fontSize:8, color:"#5a6a8a" }}>No listed injuries</div>
+                                    <div style={{ fontSize:8, color:"#7a8ab5" }}>No listed injuries</div>
                                   )}
                                 </div>
                               </div>
@@ -1372,14 +1372,14 @@ export default function ScheduleAnalysis({
                         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(110px,1fr))", gap:6, alignItems:"end" }}>
                           {EDIT_FIELDS.map(({ label, field }) => (
                             <div key={field}>
-                              <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
+                              <div style={{ fontSize:9, color:"#7a8ab2", marginBottom:3 }}>{label}</div>
                               <input value={editFields[field] ?? ""} onChange={(e) => setEditFields((prev) => ({ ...prev, [field]: e.target.value }))} style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(255,200,80,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"6px", boxSizing:"border-box", outline:"none" }} />
                             </div>
                           ))}
                         </div>
                         <div style={{ display:"flex", gap:6, marginTop:8 }}>
                           <button onClick={() => saveEdit(idx)} style={{ background:"linear-gradient(135deg,#065f46,#047857)", border:"none", borderRadius:4, padding:"6px 14px", color:"#d1fae5", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>SAVE ODDS</button>
-                          <button onClick={() => setEditingIdx(null)} style={{ background:"transparent", border:"1px solid rgba(255,200,80,0.12)", borderRadius:4, padding:"6px 14px", color:"#6a5a3a", fontSize:10, fontFamily:"monospace", cursor:"pointer" }}>CANCEL</button>
+                          <button onClick={() => setEditingIdx(null)} style={{ background:"transparent", border:"1px solid rgba(255,200,80,0.12)", borderRadius:4, padding:"6px 14px", color:"#8a97b5", fontSize:10, fontFamily:"monospace", cursor:"pointer" }}>CANCEL</button>
                         </div>
                       </div>
                     )}
@@ -1400,7 +1400,7 @@ export default function ScheduleAnalysis({
                             ["Ovr Money%", "totalOverMoneyPct"],
                           ] as const).map(([label, key]) => (
                             <div key={key}>
-                              <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
+                              <div style={{ fontSize:9, color:"#7a8ab2", marginBottom:3 }}>{label}</div>
                               <input value={contextFields[key as keyof ContextFields] as string} onChange={(e) => setContextFields((prev) => ({ ...prev, [key]: e.target.value }))} style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(96,165,250,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"6px", boxSizing:"border-box", outline:"none" }} />
                             </div>
                           ))}
@@ -1410,7 +1410,7 @@ export default function ScheduleAnalysis({
                             ["RLM Lean", "reverseLineMoveLean"],
                           ] as const).map(([label, key]) => (
                             <div key={key}>
-                              <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
+                              <div style={{ fontSize:9, color:"#7a8ab2", marginBottom:3 }}>{label}</div>
                               <input value={String(contextFields[key as keyof ContextFields])} onChange={(e) => setContextFields((prev) => ({ ...prev, [key]: e.target.value }))} placeholder="home, under" style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(96,165,250,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"6px", boxSizing:"border-box", outline:"none" }} />
                             </div>
                           ))}
@@ -1420,7 +1420,7 @@ export default function ScheduleAnalysis({
                             ["Consensus O/U", "consensusTotal", ["none", "over", "under"]],
                           ] as const).map(([label, key, options]) => (
                             <div key={key}>
-                              <div style={{ fontSize:9, color:"#5a4a2a", marginBottom:3 }}>{label}</div>
+                              <div style={{ fontSize:9, color:"#7a8ab2", marginBottom:3 }}>{label}</div>
                               <select value={String(contextFields[key as keyof ContextFields])} onChange={(e) => setContextFields((prev) => ({ ...prev, [key]: e.target.value }))} style={{ width:"100%", background:"#0d0800", border:"1px solid rgba(96,165,250,0.2)", borderRadius:3, color:"#e8d5a0", fontFamily:"monospace", fontSize:11, padding:"6px", boxSizing:"border-box", outline:"none" }}>
                                 {options.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
                               </select>
@@ -1449,9 +1449,9 @@ export default function ScheduleAnalysis({
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap", marginBottom:10 }}>
                 <div>
                   <div style={{ fontSize:10, color:"#f8e7b4", fontWeight:700, letterSpacing:2 }}>BEST BETS SUMMARY</div>
-                  <div style={{ fontSize:10, color:"#7a6a3a", marginTop:4 }}>Top playable recommendations ranked by edge percentage.</div>
+                  <div style={{ fontSize:10, color:"#9aaabb", marginTop:4 }}>Top playable recommendations ranked by edge percentage.</div>
                 </div>
-                <div style={{ fontSize:9, color:"#9a8a5a", fontFamily:"monospace" }}>
+                <div style={{ fontSize:9, color:"#a8b8cc", fontFamily:"monospace" }}>
                   {bestBetRows.length ? `${bestBetRows.length} playable pick${bestBetRows.length === 1 ? "" : "s"}` : "No playable picks yet"}
                 </div>
               </div>
@@ -1478,7 +1478,7 @@ export default function ScheduleAnalysis({
                               {projectionDetail}
                             </div>
                           ) : null}
-                          <div style={{ fontSize:9, color:"#9a8a5a" }}>{sharpDetail}</div>
+                          <div style={{ fontSize:9, color:"#a8b8cc" }}>{sharpDetail}</div>
                         </div>
                         <div style={{ textAlign:"right" }}>
                           <div style={{ fontSize:16, color:tone.color, fontWeight:700, fontFamily:"'Oswald',monospace" }}>
@@ -1492,7 +1492,7 @@ export default function ScheduleAnalysis({
                   })}
                 </div>
               ) : (
-                <div style={{ fontSize:10, color:"#6a5a3a" }}>Run sims with odds loaded to populate the shortlist. If everything grades out as a pass, the summary will stay empty.</div>
+                <div style={{ fontSize:10, color:"#8a97b5" }}>Run sims with odds loaded to populate the shortlist. If everything grades out as a pass, the summary will stay empty.</div>
               )}
             </div>
           )}

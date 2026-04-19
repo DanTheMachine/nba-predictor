@@ -16,7 +16,7 @@ export default function StatBar({ label, hVal, aVal, hColor, aColor, lo, hi, inv
   const mid  = (lo+hi)/2;
   return (
     <div style={{ marginBottom:10 }}>
-      <div style={{ fontSize:10, color:"#7a6a3a", letterSpacing:2, marginBottom:4, fontFamily:"monospace" }}>{label}</div>
+      <div style={{ fontSize:10, color:"#9aaabb", letterSpacing:2, marginBottom:4, fontFamily:"monospace" }}>{label}</div>
       <div style={{ display:"flex", alignItems:"center", gap:7 }}>
         <span style={{ fontSize:12, fontWeight:700, color:(invert?hVal<=mid:hVal>=mid)?"#fbbf24":"#4b5563", width:52, textAlign:"right", fontFamily:"monospace" }}>{disp(hVal)}</span>
         <div style={{ flex:1, height:4, background:"rgba(255,200,80,0.1)", borderRadius:2, position:"relative" }}>
