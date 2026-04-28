@@ -59,12 +59,19 @@ The core projection engine lives in `predictGame(...)`.
 
 ### 2.1 Context adjustments
 
-- Playoff games reduce expected pace with `PLAYOFF_PACE_MULTIPLIER = 0.975`.
-- Regular season games use full pace.
-- Home court advantage is modeled as `HOME_COURT_EDGE = 2.3`.
-- Each back-to-back applies a margin adjustment:
-  - `homeB2B -> -1.4`
-  - `awayB2B -> +1.4`
+Playoff games apply two separate multipliers to account for slower tempo and tighter defensive preparation:
+
+- `PLAYOFF_PACE_FACTOR = 0.966` — scales expected possessions downward
+- `PLAYOFF_SCORING_FACTOR = 0.976` — scales both teams' expected ratings downward after matchup blending
+
+Combined effect: ~5.8% below an equivalent regular-season projection. A single flat factor applies to all playoff rounds (Round 1 through Finals). Per-round escalation was considered but is not empirically supported — later rounds do not reliably score lower than earlier ones because better offenses also survive.
+
+Regular season games use full pace and full ratings (factors of 1.0).
+
+Home court advantage is modeled as `HOME_COURT_EDGE = 2.3`. Each back-to-back applies a margin adjustment:
+
+- `homeB2B -> -1.4`
+- `awayB2B -> +1.4`
 
 Unlike the older version of the model, home court and fatigue are handled as point-margin adjustments instead of score multipliers.
 
@@ -77,7 +84,7 @@ The model estimates game pace with:
 This means:
 
 - start from the average pace of both teams
-- reduce it slightly in playoff games
+- reduce it in playoff games using `PLAYOFF_PACE_FACTOR`
 - clamp it into a realistic NBA range
 
 This possessions estimate becomes the scoring volume base for both teams.
@@ -142,13 +149,13 @@ This lets overall team quality matter without overwhelming the matchup layer.
 
 Home expected rating:
 
-- `clamp(homeBaseRtg + homeMatchupAdj + netRatingEdge / 2, 101, 125)`
+- `clamp(homeBaseRtg + homeMatchupAdj + netRatingEdge / 2, 101, 125) * playoffScoringFactor`
 
 Away expected rating:
 
-- `clamp(awayBaseRtg + awayMatchupAdj - netRatingEdge / 2, 101, 125)`
+- `clamp(awayBaseRtg + awayMatchupAdj - netRatingEdge / 2, 101, 125) * playoffScoringFactor`
 
-These are bounded so the model does not wander into unrealistic offensive outputs.
+The clamp keeps ratings in a realistic NBA range. The `playoffScoringFactor` is then applied to both teams to account for the reduced offensive efficiency seen in playoff games. In regular season games the factor is `1.0` and has no effect.
 
 ### 2.7 Projected points and total
 

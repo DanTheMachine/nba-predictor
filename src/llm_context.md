@@ -82,6 +82,19 @@
   - totals recommendations now require projected total to differ from the market total by more than `3.0` points
 - The displayed `hScore`, `aScore`, `total`, and `projDiff` values in `src/lib/nbaModel.ts` are now rounded from one consistent display layer so shown team scores add up cleanly to the shown total.
 
+## Playoff Totals Bias Fix
+
+- The model was predicting OVER on every playoff game because projected totals were consistently 10–15 pts above Vegas lines.
+- Root cause: the old `PLAYOFF_PACE_MULTIPLIER = 0.975` was a 2.5% pace-only reduction, too small to reflect actual playoff scoring drops.
+- Fix: replaced with two flat constants applied uniformly across all playoff rounds:
+  - `PLAYOFF_PACE_FACTOR = 0.966` — pace reduction (was 0.975)
+  - `PLAYOFF_SCORING_FACTOR = 0.976` — new; multiplied into both teams' expected ratings after matchup blending and clamping
+- Combined effect: ~5.8% below regular-season projections.
+- Per-round escalation (R1 → Finals getting progressively lower) was considered and rejected — later rounds do not empirically show lower scoring than earlier rounds because better offenses also survive.
+- A single flat factor is used for now. If later rounds show persistent bias it can be revisited.
+- Files changed: `src/lib/nbaModel.ts`
+- Tests added: `src/lib/nbaModel.test.ts`
+
 ## Documentation Added
 
 - Added a model explainer:
@@ -265,6 +278,7 @@
   - `playwright.config.ts`
   - `.github/workflows/ci.yml`
 - Current test coverage includes:
+  - core prediction engine unit tests in `src/lib/nbaModel.test.ts` (regular season vs playoff total reduction, scoring factor behavior)
   - betting math unit tests in `src/lib/betting.test.ts`
   - composite recommendation unit tests in `src/lib/compositeRecommendation.test.ts`
   - bulk odds parser unit tests in `src/lib/bulkOddsParser.test.ts`
