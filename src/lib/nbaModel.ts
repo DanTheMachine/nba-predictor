@@ -62,8 +62,13 @@ const LEAGUE_AVG_RTG = 115.3;
 const LEAGUE_AVG_PACE = 99.0;
 const HOME_COURT_EDGE = 2.3;
 const BACK_TO_BACK_EDGE = 1.4;
-const PLAYOFF_PACE_MULTIPLIER = 0.975;
 const MARGIN_STD_DEV = 12.0;
+
+// Playoffs see a meaningful drop in pace and scoring efficiency vs regular season.
+// pace: possessions-per-game multiplier; scoring: applied to expected ratings after matchup blending.
+// Combined effect: ~5.8% below regular season. Adjust if later rounds show persistent bias.
+const PLAYOFF_PACE_FACTOR = 0.966;
+const PLAYOFF_SCORING_FACTOR = 0.976;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -185,7 +190,8 @@ export function predictGame({
   const a = liveStats?.[awayTeam] ? { ...fb_a, ...liveStats[awayTeam] } : { ...fb_a };
 
   const isPlayoff = gameType !== "Regular Season";
-  const playoffPaceFactor = isPlayoff ? PLAYOFF_PACE_MULTIPLIER : 1;
+  const playoffPaceFactor = isPlayoff ? PLAYOFF_PACE_FACTOR : 1;
+  const playoffScoringFactor = isPlayoff ? PLAYOFF_SCORING_FACTOR : 1;
 
   const expectedPace = clamp(((h.pace + a.pace) / 2) * playoffPaceFactor, 92, 103);
 
@@ -213,8 +219,8 @@ export function predictGame({
     (homeB2B ? -BACK_TO_BACK_EDGE : 0) +
     (awayB2B ? BACK_TO_BACK_EDGE : 0);
 
-  const homeExpectedRtg = clamp(homeBaseRtg + homeMatchupAdj + netRatingEdge / 2, 101, 125);
-  const awayExpectedRtg = clamp(awayBaseRtg + awayMatchupAdj - netRatingEdge / 2, 101, 125);
+  const homeExpectedRtg = clamp(homeBaseRtg + homeMatchupAdj + netRatingEdge / 2, 101, 125) * playoffScoringFactor;
+  const awayExpectedRtg = clamp(awayBaseRtg + awayMatchupAdj - netRatingEdge / 2, 101, 125) * playoffScoringFactor;
 
   const baseHomeScore = (homeExpectedRtg / 100) * expectedPace;
   const baseAwayScore = (awayExpectedRtg / 100) * expectedPace;
