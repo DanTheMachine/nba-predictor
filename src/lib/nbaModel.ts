@@ -66,9 +66,10 @@ const MARGIN_STD_DEV = 12.0;
 
 // Playoffs see a meaningful drop in pace and scoring efficiency vs regular season.
 // pace: possessions-per-game multiplier; scoring: applied to expected ratings after matchup blending.
-// Combined effect: ~5.8% below regular season. Adjust if later rounds show persistent bias.
+// Combined effect: ~11.9% below regular season (0.966 × 0.912).
+// Calibrated against 2026 playoff actuals: model was over-predicting by ~15 pts/game (230 vs 215 avg actual).
 const PLAYOFF_PACE_FACTOR = 0.966;
-const PLAYOFF_SCORING_FACTOR = 0.976;
+const PLAYOFF_SCORING_FACTOR = 0.912;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
