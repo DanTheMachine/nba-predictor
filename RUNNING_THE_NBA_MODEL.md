@@ -388,7 +388,7 @@ Important behavior distinction:
 - `SHARP`
 - `INJURIES`
 
-## 9. Full Workflow Pipeline Summary
+## 10. Full Workflow Pipeline Summary
 
 Use this sequence for most days:
 
@@ -406,7 +406,82 @@ Use this sequence for most days:
 12. switch to the `Results` tab
 13. import both CSVs to grade performance
 
-## 10. Common Problems
+## 11. Server Automation Pipeline
+
+The automation layer runs headless in the background and persists results to PostgreSQL. It mirrors the browser workflow but is suitable for scheduled / Airflow runs.
+
+### 10.1 Prerequisites
+
+Copy `.env.example` to `.env` and fill in:
+
+```
+DATABASE_URL=postgresql://user:pass@localhost:5432/mlb_predictor
+ODDS_CAPTURE_USERNAME=<betlotus username>
+ODDS_CAPTURE_PASSWORD=<betlotus password>
+ODDS_CAPTURE_LOGIN_URL=<betlotus login URL>
+ODDS_CAPTURE_LOGIN_FRAME_SELECTOR=<frame selector>
+ODDS_CAPTURE_USERNAME_SELECTOR=<input selector>
+ODDS_CAPTURE_PASSWORD_SELECTOR=<input selector>
+ODDS_CAPTURE_SUBMIT_SELECTOR=<button selector>
+ODDS_CAPTURE_CONTENT_SELECTOR=<odds content selector>
+ODDS_CAPTURE_NAV_SELECTORS=<pipe-separated nav click selectors>
+```
+
+### 10.2 Standard pipeline (ESPN odds)
+
+```bash
+npm run cli -- nba:run-daily-pipeline --date 2026-04-30
+```
+
+This runs in one step: loads the ESPN slate, generates predictions, persists the run and predictions to DB, and writes a CSV to `generated/nba/`.
+
+### 10.3 Pipeline with BetLotus odds overrides
+
+Run each step in order:
+
+```bash
+# Step 1 — scrape and stage odds from BetLotus
+npm run cli -- nba:capture-odds-overrides --date 2026-04-30
+
+# Step 2 — review staged records
+npm run cli -- nba:list-odds-overrides --date 2026-04-30
+
+# Step 3 — approve (or reject specific keys)
+npm run cli -- nba:approve-odds-overrides --date 2026-04-30 --source betlotus-nba
+
+# Step 4 — run predictions using approved overrides
+npm run cli -- nba:run-predictions --date 2026-04-30 --use-odds-overrides --override-source betlotus-nba
+```
+
+To reject specific games instead of approving all:
+
+```bash
+npm run cli -- nba:reject-odds-overrides --date 2026-04-30 --lookupKeys 20260430BOSLAL,20260430GSWNYK
+```
+
+To import odds from a saved text file instead of live capture:
+
+```bash
+npm run cli -- nba:import-odds-overrides --date 2026-04-30 --file /path/to/odds.txt
+```
+
+### 10.4 Results ingestion and evaluation
+
+```bash
+# Ingest yesterday's final scores
+npm run cli -- nba:ingest-results --date 2026-04-29
+
+# Evaluate model accuracy over a date range
+npm run cli -- nba:evaluate --from 2026-04-01 --to 2026-04-30
+```
+
+### 10.5 Automated daily run (launchd)
+
+The plist at `airflow/com.nba-predictor.daily-pipeline.plist` runs the pipeline at 10 AM each morning.
+
+Set `USE_ODDS_OVERRIDES=true` in the environment before starting launchd if you want the capture + approve + predict flow instead of the ESPN-only flow.
+
+## 12. Common Problems
 
 ### Proxy not running
 
@@ -476,7 +551,7 @@ Fixes:
 - make sure results and predictions refer to the same game date
 - confirm both CSVs were imported into the `Results` tab
 
-## 11. Running Checks
+## 13. Running Checks
 
 The repo currently has build and static checks available from the command line.
 
@@ -518,7 +593,7 @@ What this covers:
 - frontend TypeScript checks
 - Node and proxy TypeScript checks
 
-## 12. Testing
+## 14. Testing
 
 The repo now includes both component-level and browser-level tests.
 
@@ -582,7 +657,7 @@ First-time note:
 - Playwright may require browser installation before the first run
 - if needed, run `npx playwright install chromium`
 
-## 13. Notes For Local Runs
+## 15. Notes For Local Runs
 
 - Keep both terminals open while using the app.
 - The proxy must remain running for ESPN-backed features.

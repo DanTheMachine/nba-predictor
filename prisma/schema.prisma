@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Sport {
+  MLB
+  NBA
+  NHL
+  NCAAM
+  NFL
+  NCAAF
+}
+
+// ─── Shared Tables ────────────────────────────────────────────────────────────
+
+model PredictionRun {
+  id              String          @id @default(cuid())
+  sport           Sport           @default(NBA)
+  businessDate    DateTime
+  modelVersion    String
+  reviewStatus    String          @default("pending_review")
+  status          String          @default("completed")
+  exportPath      String?
+  resultsPath     String?
+  summary         Json
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  nbaPredictions  NbaPrediction[]
+  predictionFiles PredictionFile[]
+  resultFiles     ResultFile[]
+
+  @@index([sport, businessDate, createdAt(sort: Desc)])
+}
+
+model MlbOddsOverride {
+  id           String   @id @default(cuid())
+  sport        Sport    @default(NBA)
+  businessDate DateTime
+  lookupKey    String
+  awayTeam     String
+  homeTeam     String
+  awayStarter  String?
+  homeStarter  String?
+  source       String
+  status       String   @default("staged")
+  odds         Json
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([sport, businessDate, lookupKey, source])
+  @@index([sport, businessDate, status])
+  @@map("OddsOverride")
+}
+
+model EvaluationSummary {
+  id           String   @id @default(cuid())
+  sport        Sport    @default(NBA)
+  fromDate     DateTime
+  toDate       DateTime
+  modelVersion String?
+  thresholds   Json
+  summary      Json
+  createdAt    DateTime @default(now())
+}
+
+model ModelVersion {
+  id          String   @id @default(cuid())
+  sport       Sport    @default(NBA)
+  version     String
+  description String?
+  parameters  Json
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+
+  @@unique([sport, version])
+}
+
+model PredictionFile {
+  id              String         @id @default(cuid())
+  sport           Sport
+  businessDate    DateTime
+  source          String
+  path            String
+  fileRole        String         @default("export")
+  metadata        Json?
+  predictionRunId String?
+  createdAt       DateTime       @default(now())
+  predictionRun   PredictionRun? @relation(fields: [predictionRunId], references: [id], onDelete: SetNull)
+
+  @@index([sport, businessDate, createdAt(sort: Desc)])
+}
+
+model ResultFile {
+  id              String         @id @default(cuid())
+  sport           Sport
+  businessDate    DateTime
+  source          String
+  path            String
+  fileRole        String         @default("export")
+  metadata        Json?
+  predictionRunId String?
+  createdAt       DateTime       @default(now())
+  predictionRun   PredictionRun? @relation(fields: [predictionRunId], references: [id], onDelete: SetNull)
+
+  @@index([sport, businessDate, createdAt(sort: Desc)])
+}
+
+// ─── NBA-Specific Tables ──────────────────────────────────────────────────────
+
+model NbaTeamStatSnapshot {
+  id           String   @id @default(cuid())
+  businessDate DateTime
+  sourceSeason Int
+  fetchedAt    DateTime
+  payload      Json
+  createdAt    DateTime @default(now())
+
+  @@unique([businessDate, sourceSeason])
+  @@map("NbaTeamStatSnapshot")
+}
+
+model NbaSlateGame {
+  id           String   @id @default(cuid())
+  businessDate DateTime
+  lookupKey    String
+  awayTeam     String
+  homeTeam     String
+  gameTime     DateTime
+  gameDateIso  String
+  status       String   @default("scheduled")
+  context      Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([businessDate, lookupKey])
+  @@map("NbaSlateGame")
+}
+
+model NbaMarketOddsSnapshot {
+  id           String   @id @default(cuid())
+  businessDate DateTime
+  lookupKey    String
+  source       String
+  odds         Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([businessDate, lookupKey, source])
+  @@map("NbaMarketOddsSnapshot")
+}
+
+model NbaPrediction {
+  id              String        @id @default(cuid())
+  predictionRunId String
+  businessDate    DateTime
+  lookupKey       String
+  awayTeam        String
+  homeTeam        String
+  payload         Json
+  createdAt       DateTime      @default(now())
+  predictionRun   PredictionRun @relation(fields: [predictionRunId], references: [id], onDelete: Cascade)
+
+  @@unique([predictionRunId, lookupKey])
+  @@index([businessDate, lookupKey])
+  @@map("NbaPrediction")
+}
+
+model NbaGameResult {
+  id           String   @id @default(cuid())
+  businessDate DateTime
+  lookupKey    String
+  awayTeam     String
+  homeTeam     String
+  awayScore    Int?
+  homeScore    Int?
+  payload      Json?
+  createdAt    DateTime @default(now())
+
+  @@unique([businessDate, lookupKey])
+  @@map("NbaGameResult")
+}
