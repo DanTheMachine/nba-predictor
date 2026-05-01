@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { analyzeBetting, mlAmerican } from "./lib/betting";
 import { parseBulkOdds } from "./lib/bulkOddsParser";
@@ -85,11 +86,12 @@ export default function NBAModel() {
   const [espnLoading, setEspnLoading] = useState(false);
 
   // Schedule / export
-  const [linesRows,    setLinesRows]    = useState<ScheduleRow[]>([]);
-  const [schedStatus,  setSchedStatus]  = useState("");
-  const [schedLoading, setSchedLoading] = useState(false);
-  const [simsRunning,  setSimsRunning]  = useState(false);
-  const [showLines,    setShowLines]    = useState(false);
+  const [linesRows,      setLinesRows]      = useState<ScheduleRow[]>([]);
+  const [schedStatus,    setSchedStatus]    = useState("");
+  const [schedLoading,   setSchedLoading]   = useState(false);
+  const [simsRunning,    setSimsRunning]    = useState(false);
+  const [showLines,      setShowLines]      = useState(false);
+  const [schedGameType,  setSchedGameType]  = useState<typeof GAME_TYPES[number]>("Playoff (Round 1)");
 
   // Inline row editing
   const [editingIdx,   setEditingIdx]   = useState<number | null>(null);
@@ -255,7 +257,7 @@ export default function NBAModel() {
     setSimsRunning(true);
     setTimeout(() => {
       setLinesRows(prev => prev.map(r => {
-        const simResult = predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:"Regular Season", homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats });
+        const simResult = predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:schedGameType, homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats });
         const analysis = r.editedOdds && r.editedOdds.homeMoneyline !== 0 ? analyzeBetting(simResult, r.editedOdds) : null;
         return createCompositeFromSim(r, simResult, analysis);
       }));
@@ -428,7 +430,7 @@ export default function NBAModel() {
       "LookupKey",
     ];
     const csvRows = linesRows.map(r => {
-      const sim = r.simResult ?? predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:"Regular Season", homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats });
+      const sim = r.simResult ?? predictGame({ homeTeam:r.game.homeAbbr, awayTeam:r.game.awayAbbr, gameType:schedGameType, homeB2B:r.homeB2B, awayB2B:r.awayB2B, liveStats });
       const od  = r.editedOdds;
       const ba  = od && od.homeMoneyline !== 0 ? analyzeBetting(sim, od) : null;
       const sharpContext = normalizeSharpSignals(r.sharpInput, od);
@@ -683,6 +685,8 @@ export default function NBAModel() {
           schedStatus={schedStatus}
           schedLoading={schedLoading}
           simsRunning={simsRunning}
+          schedGameType={schedGameType}
+          setSchedGameType={setSchedGameType as Dispatch<SetStateAction<string>>}
           handleLoadSchedule={handleLoadSchedule}
           handleRunAllSims={handleRunAllSims}
           handleExport={handleExport}

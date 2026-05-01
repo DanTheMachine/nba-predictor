@@ -39,6 +39,8 @@ type Props = {
   schedStatus: string
   schedLoading: boolean
   simsRunning: boolean
+  schedGameType: string
+  setSchedGameType: Dispatch<SetStateAction<string>>
   handleLoadSchedule: () => void | Promise<void>
   handleRunAllSims: () => void
   handleExport: () => void
@@ -684,6 +686,8 @@ export default function ScheduleAnalysis({
   schedStatus,
   schedLoading,
   simsRunning,
+  schedGameType,
+  setSchedGameType,
   handleLoadSchedule,
   handleRunAllSims,
   handleExport,
@@ -832,6 +836,13 @@ export default function ScheduleAnalysis({
           {linesRows.length > 0 && <button onClick={refreshLiveSharp} disabled={!hasLiveSharpSource} style={{ background:hasLiveSharpSource ? "rgba(59,130,246,0.12)" : "rgba(59,130,246,0.04)", border:"1px solid rgba(59,130,246,0.24)", borderRadius:5, padding:"8px 14px", color:hasLiveSharpSource ? "#bfdbfe" : "#7a8ab5", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasLiveSharpSource ? "pointer" : "not-allowed" }}>REFRESH LIVE SHARP</button>}
           {linesRows.length > 0 && <button onClick={loadSampleSharp} disabled={!hasEditableOdds} style={{ background:hasEditableOdds ? "rgba(251,191,36,0.12)" : "rgba(251,191,36,0.04)", border:"1px solid rgba(251,191,36,0.24)", borderRadius:5, padding:"8px 14px", color:hasEditableOdds ? "#fde68a" : "#9aaabb", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:hasEditableOdds ? "pointer" : "not-allowed" }}>LOAD SAMPLE SHARP</button>}
           {linesRows.length > 0 && <button onClick={() => setShowBulkImport((prev) => !prev)} style={{ background:showBulkImport ? "rgba(251,191,36,0.12)" : "rgba(255,200,80,0.06)", border:"1px solid rgba(255,200,80,0.2)", borderRadius:5, padding:"8px 14px", color:showBulkImport ? "#fbbf24" : "#a8b8cc", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>{showBulkImport ? "HIDE" : "BULK EDIT LINES"}</button>}
+          {linesRows.length > 0 && <select value={schedGameType} onChange={e => setSchedGameType(e.target.value)} style={{ background:"#0d1117", border:"1px solid rgba(255,255,255,0.12)", borderRadius:5, padding:"7px 10px", color:"#c9d1d9", fontSize:10, fontWeight:700, letterSpacing:1, fontFamily:"monospace", cursor:"pointer" }}>
+            <option>Regular Season</option>
+            <option>Playoff (Round 1)</option>
+            <option>Playoff (Conf Semi)</option>
+            <option>Playoff (Conf Final)</option>
+            <option>NBA Finals</option>
+          </select>}
           {linesRows.length > 0 && <button onClick={handleRunAllSims} disabled={simsRunning} style={{ background:simsRunning ? "#0f0800" : "#d29922", border:"none", borderRadius:5, padding:"8px 14px", color:simsRunning ? "#6b7a95" : "#1a0f00", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:simsRunning ? "not-allowed" : "pointer" }}>{simsRunning ? "RUNNING..." : "RUN ALL SIMS"}</button>}
           {hasSimResults && <button onClick={handleExport} style={{ background:"#3fb950", border:"none", borderRadius:5, padding:"8px 14px", color:"#0d1117", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:"pointer" }}>PREDICTIONS CSV</button>}
           <button onClick={() => handleFetchResults(true)} disabled={fetchingResults} style={{ background:fetchingResults ? "#0f0800" : "linear-gradient(135deg,#1d4ed8,#3b82f6)", border:"none", borderRadius:5, padding:"8px 14px", color:fetchingResults ? "#6b7a95" : "#eff6ff", fontSize:10, fontWeight:700, letterSpacing:2, fontFamily:"monospace", cursor:fetchingResults ? "not-allowed" : "pointer" }}>{fetchingResults ? "FETCHING..." : "RESULTS CSV"}</button>
