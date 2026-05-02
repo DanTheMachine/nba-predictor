@@ -686,7 +686,6 @@ export default function NBAModel() {
           schedLoading={schedLoading}
           simsRunning={simsRunning}
           schedGameType={schedGameType}
-          setSchedGameType={setSchedGameType as Dispatch<SetStateAction<string>>}
           handleLoadSchedule={handleLoadSchedule}
           handleRunAllSims={handleRunAllSims}
           handleExport={handleExport}
