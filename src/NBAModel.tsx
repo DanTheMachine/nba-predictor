@@ -91,7 +91,7 @@ export default function NBAModel() {
   const [schedLoading,   setSchedLoading]   = useState(false);
   const [simsRunning,    setSimsRunning]    = useState(false);
   const [showLines,      setShowLines]      = useState(false);
-  const [schedGameType,  setSchedGameType]  = useState<typeof GAME_TYPES[number]>("Playoff (Round 1)");
+  const [schedGameType] = useState<typeof GAME_TYPES[number]>("Playoff (Round 1)");
 
   // Inline row editing
   const [editingIdx,   setEditingIdx]   = useState<number | null>(null);

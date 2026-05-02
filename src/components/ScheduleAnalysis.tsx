@@ -187,39 +187,7 @@ function hasLean(lean: SharpLeanValue | undefined, candidate: Exclude<SharpLeanS
   return leanValues(lean).includes(candidate)
 }
 
-function sampleLean(index: number, cycle: readonly SharpLeanSide[]): SharpLeanSide {
-  return cycle[index % cycle.length] ?? "none"
-}
 
-function buildSampleSharpInput(row: ScheduleRow, index: number) {
-  if (!row.editedOdds) return null
-
-  const moneylineLean: "home" | "away" = index % 2 === 0 ? "home" : "away"
-  const spreadLean: "home" | "away" = index % 3 === 0 ? "home" : "away"
-  const totalLean: "over" | "under" = index % 2 === 0 ? "over" : "under"
-
-  return {
-    source: "sample",
-    lastUpdated: new Date().toISOString(),
-    openingHomeMoneyline: row.editedOdds.homeMoneyline + (moneylineLean === "home" ? 18 : -14),
-    openingAwayMoneyline: row.editedOdds.awayMoneyline + (moneylineLean === "home" ? -14 : 18),
-    openingSpread: Number((row.editedOdds.spread + (spreadLean === "home" ? 1 : -1)).toFixed(1)),
-    openingTotal: Number((row.editedOdds.overUnder + (totalLean === "over" ? -2.5 : 2)).toFixed(1)),
-    moneylineHomeBetsPct: moneylineLean === "home" ? 41 : 63,
-    moneylineHomeMoneyPct: moneylineLean === "home" ? 57 : 49,
-    spreadHomeBetsPct: spreadLean === "home" ? 44 : 59,
-    spreadHomeMoneyPct: spreadLean === "home" ? 61 : 46,
-    totalOverBetsPct: totalLean === "over" ? 68 : 43,
-    totalOverMoneyPct: totalLean === "over" ? 52 : 61,
-    clvLean: [sampleLean(index, [moneylineLean, "none"]), sampleLean(index + 1, [totalLean, "none"])].filter((value) => value !== "none"),
-    steamMoveLean: [sampleLean(index + 1, [totalLean, "none"]), sampleLean(index + 2, [spreadLean, "none"])].filter((value) => value !== "none"),
-    reverseLineMoveLean: [sampleLean(index + 2, [spreadLean, "none"]), sampleLean(index + 3, [totalLean, "none"])].filter((value) => value !== "none"),
-    consensusMoneyline: moneylineLean,
-    consensusSpread: spreadLean,
-    consensusTotal: totalLean,
-    notes: `${row.game.awayAbbr}/${row.game.homeAbbr}: sample sharp context for UI tuning. Splits, line movement, and lean flags are seeded for preview.`,
-  }
-}
 
 function shortDate(value: string): string {
   if (!value) return value
@@ -714,7 +682,6 @@ export default function ScheduleAnalysis({
   )
 
   const hasSimResults = enrichedRows.some((entry) => entry.row.simResult)
-  const hasEditableOdds = linesRows.some((row) => row.editedOdds)
   const hasLiveSharpSource = linesRows.some((row) => row.marketData && row.editedOdds)
   const liveSharpCount = linesRows.filter((row) => row.sharpInput?.source && row.sharpInput.source !== "manual").length
   const manualSharpCount = linesRows.filter((row) => row.sharpInput?.source === "manual").length
@@ -752,17 +719,7 @@ export default function ScheduleAnalysis({
     }))
   }
 
-  const loadSampleSharp = (): void => {
-    setLinesRows((prev) => prev.map((currentRow, rowIndex) => {
-      const sharpInput = buildSampleSharpInput(currentRow, rowIndex)
-      if (!sharpInput) return currentRow
 
-      const sharpContext = normalizeSharpSignals(sharpInput, currentRow.editedOdds)
-      const analysis = currentRow.editedOdds && currentRow.simResult ? analyzeBetting(currentRow.simResult, currentRow.editedOdds) : null
-      const nextRow = { ...currentRow, sharpInput, sharpContext }
-      return { ...nextRow, compositeRecommendation: buildCompositeRecommendation(nextRow, analysis) }
-    }))
-  }
 
   const saveContext = (idx: number): void => {
     const row = linesRows[idx]
