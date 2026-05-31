@@ -261,7 +261,7 @@ export default function NBAModel() {
         const analysis = r.editedOdds && r.editedOdds.homeMoneyline !== 0 ? analyzeBetting(simResult, r.editedOdds) : null;
         return createCompositeFromSim(r, simResult, analysis);
       }));
-      setSimsRunning(false); setSchedStatus("All simulations complete — ready to export");
+      setSimsRunning(false); setSchedStatus("All predictions complete — ready to export");
     }, 80);
   };
 
@@ -532,7 +532,7 @@ export default function NBAModel() {
           <h1 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"clamp(36px,6vw,68px)", fontWeight:800, margin:"0 0 6px", lineHeight:0.95, letterSpacing:"0.03em", color:"#f0e8d0", textTransform:"uppercase" as const }}>
             Fast Break{" "}<span style={{ color:"#fbbf24", WebkitTextStroke:"0.5px rgba(251,191,36,0.4)" }}>Predictor</span>
           </h1>
-          <p style={{ fontSize:10, color:"#6b7a95", letterSpacing:"0.3em", margin:0, fontWeight:500 }}>OFF/DEF RATING · EFG% · NET RATING · PACE · TOV% · 100K SIMULATIONS</p>
+          <p style={{ fontSize:10, color:"#6b7a95", letterSpacing:"0.3em", margin:0, fontWeight:500 }}>OFF/DEF RATING · EFG% · NET RATING · PACE · TOV%</p>
         </div>
 
         {/* ── Tab Navigation ── */}

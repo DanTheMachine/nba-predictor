@@ -257,7 +257,7 @@ export function buildCompositeRecommendation(
       score: 0,
       tier: 'PASS',
       pass: true,
-      reasons: ['Run a simulation and add odds to unlock recommendations'],
+      reasons: ['Run a prediction and add odds to unlock recommendations'],
       modelStrength: 0,
       sharpStrength: 0,
     }

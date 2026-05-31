@@ -451,7 +451,7 @@ describe('ScheduleAnalysis', () => {
     expect(screen.getByText('Total: UNDER')).toBeInTheDocument()
   })
 
-  it('renders a best bets summary card after simulated game cards', () => {
+  it('renders a best bets summary card after predicted game cards', () => {
     renderScheduleAnalysis(makeSharpRow())
 
     expect(screen.getByText('BEST BETS SUMMARY')).toBeInTheDocument()

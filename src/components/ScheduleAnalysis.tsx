@@ -969,7 +969,7 @@ export default function ScheduleAnalysis({
                           <div style={{ fontSize:9, color:"#9aaabb", marginBottom:8 }}>No odds yet</div>
                         )}
                         <div style={{ fontSize:12, color:"#f8e7b4", fontWeight:700, textAlign:"center", marginTop:10 }}>
-                          {sim ? `PROJECTION: ${row.game.homeAbbr} ${sim.hScore} - ${row.game.awayAbbr} ${sim.aScore} | Total ${sim.total}` : "No simulation yet"}
+                          {sim ? `PROJECTION: ${row.game.homeAbbr} ${sim.hScore} - ${row.game.awayAbbr} ${sim.aScore} | Total ${sim.total}` : "No prediction yet"}
                         </div>
                         <div style={{ fontSize:9, color:"#dbeafe", marginTop:4, textAlign:"center" }}>
                           {sim && analysis

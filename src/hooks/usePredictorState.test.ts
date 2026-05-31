@@ -48,7 +48,7 @@ describe('usePredictorState', () => {
     predictGameMock.mockReturnValue(makePrediction())
   })
 
-  it('applies manual odds and runs a new simulation when there is no current result', () => {
+  it('applies manual odds and runs a new prediction when there is no current result', () => {
     const { result } = renderHook(() => usePredictorState({ liveStats: {} }))
 
     act(() => {

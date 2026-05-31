@@ -278,7 +278,7 @@ export default function SingleGameControls({
           transition: 'all 0.3s',
         }}
       >
-        {running ? `SIMULATING  ${simCount.toLocaleString()} / 100,000` : '▶  RUN SIMULATION'}
+        {running ? 'ANALYZING…' : '▶  RUN PREDICTION'}
       </button>
 
       <div style={{ ...card, border: `1px solid ${oddsSource === 'espn' ? 'rgba(74,222,128,0.2)' : oddsSource === 'manual' && odds ? 'rgba(251,191,36,0.18)' : 'rgba(255,200,80,0.13)'}` }}>
