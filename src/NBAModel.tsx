@@ -64,7 +64,6 @@ export default function NBAModel() {
     setAwayB2B,
     result,
     running,
-    simCount,
     odds,
     setOdds,
     oddsSource,
