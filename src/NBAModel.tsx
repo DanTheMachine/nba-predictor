@@ -621,7 +621,6 @@ export default function NBAModel() {
             hTeam={hTeam}
             aTeam={aTeam}
             running={running}
-            simCount={simCount}
             runSim={runSim}
             odds={odds}
             setOdds={setOdds}

@@ -131,7 +131,6 @@ function renderSingleGameControls(overrides: OverrideProps = {}) {
       hTeam={teams.BOS}
       aTeam={teams.LAL}
       running={false}
-      simCount={0}
       runSim={runSim}
       odds={null as OddsInput | null}
       setOdds={setOdds}

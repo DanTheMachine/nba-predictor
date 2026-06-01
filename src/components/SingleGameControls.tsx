@@ -50,7 +50,6 @@ type SingleGameControlsProps = {
   hTeam: TeamStats
   aTeam: TeamStats
   running: boolean
-  simCount: number
   runSim: () => void
   odds: OddsInput | null
   setOdds: Dispatch<SetStateAction<OddsInput | null>>
@@ -91,7 +90,6 @@ export default function SingleGameControls({
   hTeam,
   aTeam,
   running,
-  simCount,
   runSim,
   odds,
   setOdds,
