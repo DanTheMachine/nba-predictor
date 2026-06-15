@@ -60,7 +60,7 @@ Always run `npm run typecheck` and `npm run test` before committing model or bet
 | `HOME_COURT_EDGE` | 2.3 pts | Additive margin adjustment |
 | `BACK_TO_BACK_EDGE` | 1.4 pts | Applied per fatigued team |
 | `PLAYOFF_PACE_FACTOR` | 0.966 | Pace multiplier for all playoff rounds |
-| `PLAYOFF_SCORING_FACTOR` | 0.968 | Rating multiplier for all playoff rounds |
+| `PLAYOFF_SCORING_FACTOR` | 0.951 | Rating multiplier for all playoff rounds |
 | `MARGIN_STD_DEV` | 12.0 | Used in win-probability logistic curve |
 
 ## Recommendation Thresholds (betting.ts)
@@ -68,16 +68,16 @@ Always run `npm run typecheck` and `npm run test` before committing model or bet
 | Market | Threshold |
 |--------|-----------|
 | Moneyline | edge > 4.0% |
-| Spread | cover edge > 5.0% |
+| Spread | cover edge > 6.5% |
 | Total | projected total differs from line by > 3.0 pts |
 
 ## Playoff Adjustments
 
 Playoff games apply two separate multipliers to reduce the structural over-prediction seen vs Vegas lines:
 - **Pace**: `PLAYOFF_PACE_FACTOR = 0.966` — slower possessions
-- **Scoring efficiency**: `PLAYOFF_SCORING_FACTOR = 0.968` — applied to both teams' expected ratings after matchup blending
+- **Scoring efficiency**: `PLAYOFF_SCORING_FACTOR = 0.951` — applied to both teams' expected ratings after matchup blending
 
-Combined effect: ~6.5% below equivalent regular-season projections (0.966 × 0.968). Calibrated against 42 2026 playoff games: base model projects ~229, actual avg ~215. Note: the factor was previously ineffective because gameType was hardcoded to "Regular Season" in the schedule analysis — that bug is now fixed. A single flat factor is used for all playoff rounds; per-round escalation was considered but is not empirically supported — later rounds don't reliably score lower than earlier ones because better offenses also survive.
+Combined effect: ~8.1% below equivalent regular-season projections (0.966 × 0.951 = 0.919). Recalibrated after the full 2025-26 playoff season: model totals were running ~12 pts above Vegas lines throughout the playoffs, causing systematic OVER recommendations that lost. A 229-pt regular-season projection now comes out to ~211, closer to where Vegas set playoff lines. A single flat factor is used for all playoff rounds; per-round escalation was considered but is not empirically supported — later rounds don't reliably score lower than earlier ones because better offenses also survive.
 
 If totals bias reappears in later rounds, adjust `PLAYOFF_SCORING_FACTOR` in `nbaModel.ts`.
 
