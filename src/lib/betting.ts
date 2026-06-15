@@ -1,7 +1,7 @@
 import type { BettingAnalysis, OddsInput, PredictionResult } from './nbaTypes'
 
 const ML_RECOMMENDATION_EDGE = 0.04
-const SPREAD_RECOMMENDATION_EDGE = 0.05
+const SPREAD_RECOMMENDATION_EDGE = 0.065
 const TOTAL_RECOMMENDATION_POINTS = 3
 
 export function americanToImplied(ml: number): number {

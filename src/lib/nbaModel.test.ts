@@ -39,12 +39,12 @@ describe('predictGame – playoff scoring reduction', () => {
     expect(final).toBeCloseTo(nbaFinals, 4)
   })
 
-  it('reduces the playoff total by roughly 5–8% vs regular season', () => {
+  it('reduces the playoff total by roughly 7–11% vs regular season', () => {
     const rs  = total('Regular Season')
     const r1  = total('Playoff (Round 1)')
     const pct = (rs - r1) / rs
-    expect(pct).toBeGreaterThan(0.05)
-    expect(pct).toBeLessThan(0.08)
+    expect(pct).toBeGreaterThan(0.07)
+    expect(pct).toBeLessThan(0.11)
   })
 })
 

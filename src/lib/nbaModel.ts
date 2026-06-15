@@ -70,7 +70,7 @@ const MARGIN_STD_DEV = 12.0;
 // Calibrated against 42 2026 playoff games: base model projects ~229, actual avg ~215.
 // Factor was previously ineffective because gameType was hardcoded to Regular Season.
 const PLAYOFF_PACE_FACTOR = 0.966;
-const PLAYOFF_SCORING_FACTOR = 0.968;
+const PLAYOFF_SCORING_FACTOR = 0.951;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
