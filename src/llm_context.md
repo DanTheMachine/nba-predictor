@@ -78,7 +78,7 @@
   - `src/lib/betting.ts`
 - Recommendation sensitivity was also tightened in `src/lib/betting.ts` without changing the underlying simulation:
   - Moneyline recommendations now require edge above `4.0%`
-  - spread recommendations now require cover edge above `5.0%`
+  - spread recommendations now require cover edge above `6.5%`
   - totals recommendations now require projected total to differ from the market total by more than `3.0` points
 - The displayed `hScore`, `aScore`, `total`, and `projDiff` values in `src/lib/nbaModel.ts` are now rounded from one consistent display layer so shown team scores add up cleanly to the shown total.
 
@@ -88,8 +88,8 @@
 - Root cause: the old `PLAYOFF_PACE_MULTIPLIER = 0.975` was a 2.5% pace-only reduction, too small to reflect actual playoff scoring drops.
 - Fix: replaced with two flat constants applied uniformly across all playoff rounds:
   - `PLAYOFF_PACE_FACTOR = 0.966` — pace reduction (was 0.975)
-  - `PLAYOFF_SCORING_FACTOR = 0.976` — new; multiplied into both teams' expected ratings after matchup blending and clamping
-- Combined effect: ~5.8% below regular-season projections.
+  - `PLAYOFF_SCORING_FACTOR = 0.951` — multiplied into both teams' expected ratings after matchup blending and clamping
+- Combined effect: ~8.1% below regular-season projections (0.966 × 0.951 = 0.919). Recalibrated after full 2025-26 playoff season — model totals were running ~12 pts above Vegas lines, causing systematic OVER losses.
 - Per-round escalation (R1 → Finals getting progressively lower) was considered and rejected — later rounds do not empirically show lower scoring than earlier rounds because better offenses also survive.
 - A single flat factor is used for now. If later rounds show persistent bias it can be revisited.
 - Files changed: `src/lib/nbaModel.ts`
