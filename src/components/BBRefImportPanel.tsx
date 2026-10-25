@@ -80,8 +80,8 @@ export default function BBRefImportPanel({
             <div style={{ fontSize: 10, color: '#fbbf24', letterSpacing: 3, marginBottom: 8, fontWeight: 700 }}>HOW TO GET THE DATA</div>
             <div>
               1. Go to{' '}
-              <a href="https://www.basketball-reference.com/leagues/NBA_2026.html" target="_blank" rel="noopener noreferrer" style={{ color: '#fbbf24' }}>
-                basketball-reference.com/leagues/NBA_2026.html
+              <a href="https://www.basketball-reference.com/leagues/NBA_2027.html" target="_blank" rel="noopener noreferrer" style={{ color: '#fbbf24' }}>
+                basketball-reference.com/leagues/NBA_2027.html
               </a>
             </div>
             <div>
