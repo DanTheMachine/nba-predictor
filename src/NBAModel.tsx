@@ -90,7 +90,7 @@ export default function NBAModel() {
   const [schedLoading,   setSchedLoading]   = useState(false);
   const [simsRunning,    setSimsRunning]    = useState(false);
   const [showLines,      setShowLines]      = useState(false);
-  const [schedGameType] = useState<typeof GAME_TYPES[number]>("Playoff (Round 1)");
+  const [schedGameType, setSchedGameType] = useState<typeof GAME_TYPES[number]>("Regular Season");
 
   // Inline row editing
   const [editingIdx,   setEditingIdx]   = useState<number | null>(null);
@@ -170,6 +170,8 @@ export default function NBAModel() {
     try {
       const { games, rawEvents } = await fetchTodaySchedule(setSchedStatus);
       if (!games.length) { setSchedStatus("No NBA games found today."); setSchedLoading(false); return; }
+      // ESPN season.type: 2 = regular season, 3 = postseason. All playoff rounds share the same factors.
+      setSchedGameType(rawEvents.some(ev => ev?.season?.type === 3) ? "Playoff (Round 1)" : "Regular Season");
       const today = new Date().toISOString().slice(0, 10);
       const rows = games.map(g => {
         let eo = null;
