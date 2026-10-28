@@ -333,7 +333,13 @@ export async function fetchRecentForm(abbrs: TeamAbbr[]): Promise<Partial<Record
     )
     if (!res.ok) continue
 
-    const data = (await res.json()) as ScoreboardResponse
+    // ESPN occasionally returns 200 with an empty body for past dates; skip those days.
+    let data: ScoreboardResponse
+    try {
+      data = JSON.parse(await res.text()) as ScoreboardResponse
+    } catch {
+      continue
+    }
     for (const event of data.events ?? []) {
       const comp = event.competitions?.[0]
       const homeC = comp?.competitors?.find((c) => c.homeAway === 'home')
